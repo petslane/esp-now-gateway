@@ -1,0 +1,5 @@
+.idea
+.pioenvs
+.piolibdeps
+cmake-build-debug
+CMakeListsPrivate.txt
