@@ -1,4 +1,6 @@
-# esp-now-gateway
+# ESP-NOW Gateway
+
+![logo]
 
 ESP-NOW Gateway with MQTT ([Homie v3][homie]) using 2 WeMos D1 minis where one WeMos D1 mini acts
 as ESP-NOW device for sending and receiving ESP-NOW messages and second WeMos D1 mini acts as WiFi device that relays
@@ -75,3 +77,4 @@ MQTT topic `homie/gateway/message/3505AA600194`
 [ESPAsyncWebServer]: https://github.com/me-no-dev/ESPAsyncWebServer
 [espsoftwareserial]: https://github.com/plerup/espsoftwareserial
 [homie-node]: https://github.com/homieiot/convention/blob/develop/convention.md#nodes
+[logo]: image.png
