@@ -1,3 +1,5 @@
+#ifndef HOMIE_INIT_H
+#define HOMIE_INIT_H
 
 #include <Arduino.h>
 #include <Homie.h>
@@ -209,3 +211,23 @@ namespace homie {
         }
     }
 }
+
+class GWHomie {
+public:
+    GWHomie() {}
+    void send(const char* mac, const char* message, size_t len) {
+        homie::OutgoingMqttMessage o;
+        memcpy(o.mac, mac, 6);
+
+        char msg[len + 1];
+        memcpy(msg, message, len);
+        msg[len] = '\0';
+        o.message = new String(msg);
+
+        homie::outgoingMqttMessages.push_back(o);
+
+        Serial.printf("[homie] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], msg);
+    }
+};
+
+#endif // HOMIE_INIT_H

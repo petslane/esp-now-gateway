@@ -34,7 +34,7 @@ private:
 public:
     Now(Com * c) {
         this->com = c;
-        com::addOnNowMessageSendListener(std::bind(&Now::send, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        this->com->addOnNowMessageSendListener(std::bind(&Now::send, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     }
 
     bool send(String mac, const char * msg, uint8 len, unsigned long id) {
