@@ -7,19 +7,22 @@
 #include <homie.hpp>
 #include <webserver.hpp>
 #include <websocket.hpp>
+
+GWHomie * homiee = new GWHomie();
+Com * comm = new Com(homiee);
+
 #elif DEV_MODE == 2
 #include <now.hpp>
 
-Com * comm;
+Com * comm = new Com();
 Now * now = new Now(comm);
 #endif
 
 void setup() {
     Serial.begin(115200);
     Buffer::setup();
-    com::setup();
+    comm->setup();
 #if DEV_MODE == 1
-    com::mqttSend = homie::send;
     homie::setup();
     webserver::setup();
     ws::setup();
@@ -31,7 +34,7 @@ void setup() {
 
 
 void loop() {
-    com::loop();
+    comm->loop();
 #if DEV_MODE == 1
     homie::loop();
     ws::loop();

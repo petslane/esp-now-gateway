@@ -8,6 +8,7 @@
 #include "utils.hpp"
 
 #if DEV_MODE == 1
+#include <homie.hpp>
 #include "websocket.hpp"
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
@@ -19,105 +20,15 @@
 typedef std::function<bool(String, const char *, uint8, unsigned long)> onNowMessageSendCallback;
 typedef std::vector<onNowMessageSendCallback> onNowMessageSendCallbackVector;
 
-namespace com {
-    onNowMessageSendCallbackVector nowMessageSendCallbackVector;
-
-    void addOnNowMessageSendListener(onNowMessageSendCallback cb) {
-         com::nowMessageSendCallbackVector.push_back(cb);
-    }
-
-    void (*mqttSend)(const char* mac, const char* message, size_t len);
-
-    void receivedSerialData(const char *data, uint8 len);
-
-    void send(utils::msgType type, unsigned long id, String name1, String value1);
-    void send(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2);
-
+class Com {
+private:
+    SoftwareSerial * swSer;
 #if DEV_MODE == 1
-    SoftwareSerial swSer(SERIAL_PIN_1, SERIAL_PIN_2, false, 256);
-#elif DEV_MODE == 2
-    SoftwareSerial swSer(SERIAL_PIN_2, SERIAL_PIN_1, false, 256);
+    GWHomie * homie;
 #endif
     uint8 bufferPosition = 0;
     char buffer[512];
-
-    void setup() {
-        swSer.begin(9600);
-        swSer.print("\n");
-    }
-
-    void loop() {
-        bool hasFullData = false;
-        while (swSer.available() > 0) {
-            char c = (char) swSer.read();
-            if (c == '\n') {
-                if (!bufferPosition) {
-                    continue;
-                }
-                hasFullData = true;
-                break;
-            }
-            buffer[bufferPosition] = c;
-            bufferPosition++;
-        }
-        if (hasFullData) {
-            receivedSerialData(buffer, bufferPosition);
-            bufferPosition = 0;
-            memset(buffer, '\0', 512);
-        }
-        if (!Buffer::is_buffer_empty() && !swSer.available()) {
-            Buffer::Index dataIndex = Buffer::get_index(0);
-            if (dataIndex.type == utils::msgType::send_now_message) {
-                StaticJsonBuffer<300> jsonBuffer;
-                JsonObject& root = jsonBuffer.createObject();
-                root["type"] = (int) utils::msgType::send_now_message;
-                const String string = Buffer::get_data(0);
-                root["msg"] = string;
-                root["to"] = utils::macCharArrayToString(dataIndex.attr.send_now_message.mac);
-                if (dataIndex.id) {
-                    root["id"] = dataIndex.id;
-                }
-                swSer.println();
-                root.printTo(swSer);
-                swSer.println();
-
-                Serial.print("[com] Sending: ");
-                root.printTo(Serial);
-                Serial.println();
-
-                Buffer::remove(0);
-            }
-
-        }
-    }
-
-    void send(utils::msgType type, unsigned long id, String name1, String value1) {
-        String s;
-        send(type, id, name1, value1, s, s);
-    }
-    void send(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2) {
-        StaticJsonBuffer<200> jsonBuffer;
-        JsonObject& json = jsonBuffer.createObject();
-
-        json.set("type", (int) type);
-        if (id) {
-            json.set("id", id);
-        }
-        if (name1.length() > 0) {
-            json.set(name1, value1);
-        }
-        if (name2.length() > 0) {
-            json.set(name2, value2);
-        }
-
-        swSer.print("\n");
-        json.printTo(swSer);
-        swSer.print("\n");
-
-        Serial.print("[com] Sending: ");
-        json.printTo(Serial);
-        Serial.println();
-    }
+    onNowMessageSendCallbackVector nowMessageSendCallbackVector;
 
     void receivedSerialData(const char *data, uint8 len) {
         Serial.print("[com] Received data: ");
@@ -143,13 +54,13 @@ namespace com {
             String from = doc["from"].as<String>();
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
-                mqttSend(mac, msg.c_str(), msg.length());
+                this->homie->send(mac, msg.c_str(), msg.length());
                 ws::ws.textAll("Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
             unsigned long id =  doc.get<unsigned long>("id");
             Serial.printf("[com] Message %i delivered\n", id);
-            swSer.println("");
+            this->swSer->println("");
             ws::ws.textAll("Message delivered");
         } else if (type == utils::msgType::now_message_not_delivered) {
             unsigned long id =  doc.get<unsigned long>("id");
@@ -169,16 +80,99 @@ namespace com {
 #endif // DEV_MODE == 2
         }
     }
-}
 
-class Com {
 public:
+#if DEV_MODE == 1
+    Com(GWHomie * h) {
+        this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false, 256);
+        this->homie = h;
+    }
+#endif
+#if DEV_MODE == 2
+    Com() {
+        swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false, 256);
+    }
+#endif
     void send(utils::msgType type, unsigned long id, String name1, String value1) {
         String s;
         send(type, id, name1, value1, s, s);
     }
     void send(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2) {
-        com::send(type, id, name1, value1, name2, value2);
+        StaticJsonBuffer<200> jsonBuffer;
+        JsonObject& json = jsonBuffer.createObject();
+
+        json.set("type", (int) type);
+        if (id) {
+            json.set("id", id);
+        }
+        if (name1.length() > 0) {
+            json.set(name1, value1);
+        }
+        if (name2.length() > 0) {
+            json.set(name2, value2);
+        }
+
+        this->swSer->print("\n");
+        json.printTo(*this->swSer);
+        this->swSer->print("\n");
+
+        Serial.print("[com] Sending: ");
+        json.printTo(Serial);
+        Serial.println();
+    }
+
+    void setup() {
+        swSer->begin(9600);
+        swSer->print("\n");
+    }
+
+    void loop() {
+        bool hasFullData = false;
+        while (this->swSer->available() > 0) {
+            char c = (char) this->swSer->read();
+            if (c == '\n') {
+                if (!bufferPosition) {
+                    continue;
+                }
+                hasFullData = true;
+                break;
+            }
+            buffer[bufferPosition] = c;
+            bufferPosition++;
+        }
+        if (hasFullData) {
+            receivedSerialData(buffer, bufferPosition);
+            bufferPosition = 0;
+            memset(buffer, '\0', 512);
+        }
+        if (!Buffer::is_buffer_empty() && !this->swSer->available()) {
+            Buffer::Index dataIndex = Buffer::get_index(0);
+            if (dataIndex.type == utils::msgType::send_now_message) {
+                StaticJsonBuffer<300> jsonBuffer;
+                JsonObject& root = jsonBuffer.createObject();
+                root["type"] = (int) utils::msgType::send_now_message;
+                const String string = Buffer::get_data(0);
+                root["msg"] = string;
+                root["to"] = utils::macCharArrayToString(dataIndex.attr.send_now_message.mac);
+                if (dataIndex.id) {
+                    root["id"] = dataIndex.id;
+                }
+                this->swSer->println();
+                root.printTo(*this->swSer);
+                this->swSer->println();
+
+                Serial.print("[com] Sending: ");
+                root.printTo(Serial);
+                Serial.println();
+
+                Buffer::remove(0);
+            }
+
+        }
+    }
+
+    void addOnNowMessageSendListener(onNowMessageSendCallback cb) {
+        nowMessageSendCallbackVector.push_back(cb);
     }
 };
 
