@@ -11,13 +11,21 @@
 #include "websocket.hpp"
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
-#include "now.hpp"
 #endif // DEV_MODE == 2
 
 #define SERIAL_PIN_1 D1
 #define SERIAL_PIN_2 D2
 
+typedef std::function<bool(String, const char *, uint8, unsigned long)> onNowMessageSendCallback;
+typedef std::vector<onNowMessageSendCallback> onNowMessageSendCallbackVector;
+
 namespace com {
+    onNowMessageSendCallbackVector nowMessageSendCallbackVector;
+
+    void addOnNowMessageSendListener(onNowMessageSendCallback cb) {
+         com::nowMessageSendCallbackVector.push_back(cb);
+    }
+
     void (*mqttSend)(const char* mac, const char* message, size_t len);
 
     void receivedSerialData(const char *data, uint8 len);
@@ -155,10 +163,23 @@ namespace com {
             String to = doc["to"].as<String>();
             unsigned long id = doc["id"].as<unsigned long>();
 
-            now::send(to, msg.c_str(), (uint8) msg.length(), id);
+            std::for_each(nowMessageSendCallbackVector.begin(), nowMessageSendCallbackVector.end(), [&](onNowMessageSendCallback cb) {
+                cb(to, msg.c_str(), (uint8) msg.length(), id);
+            });
 #endif // DEV_MODE == 2
         }
     }
 }
+
+class Com {
+public:
+    void send(utils::msgType type, unsigned long id, String name1, String value1) {
+        String s;
+        send(type, id, name1, value1, s, s);
+    }
+    void send(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2) {
+        com::send(type, id, name1, value1, name2, value2);
+    }
+};
 
 #endif // COM_INIT_H

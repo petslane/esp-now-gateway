@@ -9,6 +9,9 @@
 #include <websocket.hpp>
 #elif DEV_MODE == 2
 #include <now.hpp>
+
+Com * comm;
+Now * now = new Now(comm);
 #endif
 
 void setup() {
@@ -21,8 +24,7 @@ void setup() {
     webserver::setup();
     ws::setup();
 #elif DEV_MODE == 2
-    now::serialSend = com::send;
-    now::setup();
+    now->setup();
 #endif
     Serial.println("Setup");
 }
@@ -34,7 +36,7 @@ void loop() {
     homie::loop();
     ws::loop();
 #elif DEV_MODE == 2
-    now::loop();
+    now->loop();
 #endif
 }
 

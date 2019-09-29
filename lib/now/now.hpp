@@ -28,8 +28,14 @@ struct IncomingNowMessage {
 
 static volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 
-namespace now {
-    void (*serialSend)(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2);
+class Now {
+private:
+    Com * com;
+public:
+    Now(Com * c) {
+        this->com = c;
+        com::addOnNowMessageSendListener(std::bind(&Now::send, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    }
 
     bool send(String mac, const char * msg, uint8 len, unsigned long id) {
         NowMessage nowMessage;
@@ -42,12 +48,6 @@ namespace now {
         nowMessage.buffer_data.id = id;
         nowMessage.buffer_data.errorCount = 0;
         return nowMessage.append(msg, len) > -1;
-    }
-    bool send(NowMessage * nowMessage) {
-        if (nowMessage->isSaved()) {
-            return false;
-        }
-        return nowMessage->append() > -1;
     }
 
     void loop() {
@@ -71,14 +71,14 @@ namespace now {
                 if (msg.buffer_data.status == NowMessageStatus::sent || msg.buffer_data.status == NowMessageStatus::failed) {
                     String mac = utils::macCharArrayToString(msg.buffer_data.mac);
                     utils::msgType type = msg.buffer_data.status == NowMessageStatus::sent ? utils::msgType::now_message_delivered : utils::msgType::now_message_not_delivered;
-                    serialSend(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
+                    this->com->send(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
                     msg.remove();
                     continue;
                 }
 
                 if (msg.buffer_data.status == NowMessageStatus::received) {
                     String mac = utils::macCharArrayToString(msg.buffer_data.mac);
-                    serialSend(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
+                    this->com->send(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
                     msg.remove();
                     continue;
                 }
@@ -170,6 +170,6 @@ namespace now {
             is_sending = false;
         });
     }
-}
+};
 
 #endif // NOW_INIT_H
