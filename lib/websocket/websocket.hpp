@@ -13,8 +13,9 @@
 
 #define WS_BUFFER_SIZE 10
 
-namespace ws {
-    AsyncWebSocket ws("/ws");
+class WebSocket {
+private:
+    AsyncWebSocket * ws;
 
     std::vector<String*> ptrIncomingMessages;
 
@@ -33,6 +34,10 @@ namespace ws {
         }
     }
 
+public:
+    WebSocket() {
+        ws = new AsyncWebSocket("/ws");
+    }
     void loop() {
         if (ptrIncomingMessages.size() > 0) {
             String * incomingMessage = ptrIncomingMessages.at(0);
@@ -69,14 +74,27 @@ namespace ws {
     void setup() {
         ptrIncomingMessages.reserve(WS_BUFFER_SIZE);
 
-        ws.onEvent(onEvent);
+        ws->onEvent(std::bind(
+                &WebSocket::onEvent,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4,
+                std::placeholders::_5,
+                std::placeholders::_6
+        ));
 #ifdef AUTH_USERNAME
         ws.setAuthentication((const char* ) XSTR(AUTH_USERNAME), (const char* ) XSTR(AUTH_PASSWORD));
 #endif
 
-        webserver::server.addHandler(&ws);
+        webserver::server.addHandler(ws);
     }
 
-}
+    void textAll(char * msg) {
+        ws->textAll(msg);
+    }
+
+};
 
 #endif // WEBSOCKET_INIT_H

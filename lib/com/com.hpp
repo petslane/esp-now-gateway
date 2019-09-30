@@ -25,6 +25,7 @@ private:
     SoftwareSerial * swSer;
 #if DEV_MODE == 1
     GWHomie * homie;
+    WebSocket * ws;
 #endif
     uint8 bufferPosition = 0;
     char buffer[512];
@@ -55,17 +56,17 @@ private:
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
                 this->homie->send(mac, msg.c_str(), msg.length());
-                ws::ws.textAll("Message received");
+                ws->textAll("Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
             unsigned long id =  doc.get<unsigned long>("id");
             Serial.printf("[com] Message %i delivered\n", id);
             this->swSer->println("");
-            ws::ws.textAll("Message delivered");
+            ws->textAll("Message delivered");
         } else if (type == utils::msgType::now_message_not_delivered) {
             unsigned long id =  doc.get<unsigned long>("id");
             Serial.printf("[com] Message %i NOT delivered\n", id);
-            ws::ws.textAll("Message not delivered");
+            ws->textAll("Message not delivered");
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
         } else if (type == (uint8) utils::msgType::send_now_message) {
@@ -83,9 +84,10 @@ private:
 
 public:
 #if DEV_MODE == 1
-    Com(GWHomie * h) {
+    Com(GWHomie * h, WebSocket * ws) {
         this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false, 256);
         this->homie = h;
+        this->ws = ws;
     }
 #endif
 #if DEV_MODE == 2
