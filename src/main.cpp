@@ -8,8 +8,8 @@
 #include <webserver.hpp>
 #include <websocket.hpp>
 
-GWHomie * homiee = new GWHomie();
-Com * comm = new Com(homiee);
+GWHomie * homie = new GWHomie();
+Com * comm = new Com(homie);
 
 #elif DEV_MODE == 2
 #include <now.hpp>
@@ -23,7 +23,7 @@ void setup() {
     Buffer::setup();
     comm->setup();
 #if DEV_MODE == 1
-    homie::setup();
+    homie->setup();
     webserver::setup();
     ws::setup();
 #elif DEV_MODE == 2
@@ -36,7 +36,7 @@ void setup() {
 void loop() {
     comm->loop();
 #if DEV_MODE == 1
-    homie::loop();
+    homie->loop();
     ws::loop();
 #elif DEV_MODE == 2
     now->loop();
