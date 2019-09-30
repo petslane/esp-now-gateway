@@ -16,6 +16,7 @@
 class WebSocket {
 private:
     AsyncWebSocket * ws;
+    WebServer * webserver;
 
     std::vector<String*> ptrIncomingMessages;
 
@@ -35,8 +36,9 @@ private:
     }
 
 public:
-    WebSocket() {
-        ws = new AsyncWebSocket("/ws");
+    WebSocket(WebServer * webserver) {
+        this->ws = new AsyncWebSocket("/ws");
+        this->webserver = webserver;
     }
     void loop() {
         if (ptrIncomingMessages.size() > 0) {
@@ -88,7 +90,7 @@ public:
         ws.setAuthentication((const char* ) XSTR(AUTH_USERNAME), (const char* ) XSTR(AUTH_PASSWORD));
 #endif
 
-        webserver::server.addHandler(ws);
+        webserver->addHandler(ws);
     }
 
     void textAll(char * msg) {
