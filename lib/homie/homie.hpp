@@ -5,9 +5,9 @@
 #include <Homie.h>
 #include <ESP8266mDNS.h>
 
-
-namespace homie {
-    HomieNode nowNode("now", "ESP-NOW Gateway", "Gateway");
+class GWHomie {
+private:
+    HomieNode * nowNode;
 
     struct OutgoingMqttMessage {
         char mac[6];
@@ -15,44 +15,6 @@ namespace homie {
     };
 
     std::vector<OutgoingMqttMessage> outgoingMqttMessages;
-
-    void onHomieEvent(const HomieEvent& event) {
-        if (event.type == HomieEventType::WIFI_CONNECTED) {
-            MDNS.begin("now-gw");
-            MDNS.addService("http","tcp",80);
-        } else if (event.type == HomieEventType::WIFI_DISCONNECTED) {
-            MDNS.end();
-        } else if (event.type == HomieEventType::MQTT_READY) {
-            Serial.println("[homie] MQTT ready");
-
-            String topic = String(Homie.getConfiguration().mqtt.baseTopic);
-            if (!topic.endsWith("/")) {
-                topic += "/";
-            }
-            topic += Homie.getConfiguration().deviceId;
-            topic += "/message/+/send";
-
-            Homie.getMqttClient().subscribe(topic.c_str(), 0);
-
-            Serial.printf("[homie] Subscribed to topic: %s\n", topic.c_str());
-        } else if (event.type == HomieEventType::MQTT_DISCONNECTED) {
-            Serial.println("[homie] MQTT disconnected");
-        }
-    }
-
-    void send(const char* mac, const char* message, size_t len) {
-        OutgoingMqttMessage o;
-        memcpy(o.mac, mac, 6);
-
-        char msg[len + 1];
-        memcpy(msg, message, len);
-        msg[len] = '\0';
-        o.message = new String(msg);
-
-        outgoingMqttMessages.push_back(o);
-
-        Serial.printf("[homie] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], msg);
-    }
 
     void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
         String topicTemplate = String(Homie.getConfiguration().mqtt.baseTopic);
@@ -92,7 +54,7 @@ namespace homie {
 
     bool sendMessage(const char * macName, const String& value) {
         char mac[7];
-        if (!homie::macStringToCharArray(macName, mac)) {
+        if (!macStringToCharArray(macName, mac)) {
             return false;
         }
         Buffer::add_send_now_msg(mac, value.c_str(), value.length(), 0);
@@ -110,18 +72,18 @@ namespace homie {
     }
 
     void setupNodes() {
-        nowNode.advertise("now_sent_success")
-            .setName("NOW messages successfully sent")
-            .setDatatype("integer")
-            .setRetained(true);
-        nowNode.advertise("now_sent_failed")
-            .setName("NOW messages failed sent")
-            .setDatatype("integer")
-            .setRetained(true);
-        nowNode.advertise("now_received")
-            .setName("NOW messages received")
-            .setDatatype("integer")
-            .setRetained(true);
+        nowNode->advertise("now_sent_success")
+                .setName("NOW messages successfully sent")
+                .setDatatype("integer")
+                .setRetained(true);
+        nowNode->advertise("now_sent_failed")
+                .setName("NOW messages failed sent")
+                .setDatatype("integer")
+                .setRetained(true);
+        nowNode->advertise("now_received")
+                .setName("NOW messages received")
+                .setDatatype("integer")
+                .setRetained(true);
 
         if (!SPIFFS.exists("/devices.json")) {
             Serial.printf("[homie] devices.json file does not exist\n");
@@ -167,18 +129,66 @@ namespace homie {
 
     }
 
+    void onHomieEvent(const HomieEvent& event) {
+        if (event.type == HomieEventType::WIFI_CONNECTED) {
+            MDNS.begin("now-gw");
+            MDNS.addService("http","tcp",80);
+        } else if (event.type == HomieEventType::WIFI_DISCONNECTED) {
+            MDNS.end();
+        } else if (event.type == HomieEventType::MQTT_READY) {
+            Serial.println("[homie] MQTT ready");
+
+            String topic = String(Homie.getConfiguration().mqtt.baseTopic);
+            if (!topic.endsWith("/")) {
+                topic += "/";
+            }
+            topic += Homie.getConfiguration().deviceId;
+            topic += "/message/+/send";
+
+            Homie.getMqttClient().subscribe(topic.c_str(), 0);
+
+            Serial.printf("[homie] Subscribed to topic: %s\n", topic.c_str());
+        } else if (event.type == HomieEventType::MQTT_DISCONNECTED) {
+            Serial.println("[homie] MQTT disconnected");
+        }
+    }
+public:
+    GWHomie() {
+        nowNode = new HomieNode("now", "ESP-NOW Gateway", "Gateway");
+    }
+
     void setup() {
         Homie_setFirmware("esp-now-gateway", "1.0.0");
         Homie.setHomieBootMode(HomieBootMode::NORMAL);
 
-        Homie.onEvent(onHomieEvent);
+        Homie.onEvent(std::bind(
+                &GWHomie::onHomieEvent,
+                this,
+                std::placeholders::_1
+        ));
 
-        Homie.getMqttClient().onMessage(onMqttMessage);
+        Homie.getMqttClient().onMessage(std::bind(
+                &GWHomie::onMqttMessage,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4,
+                std::placeholders::_5,
+                std::placeholders::_6
+        ));
 
         SPIFFS.begin();
         setupNodes();
 
-        Homie.setGlobalInputHandler(globalInputHandler);
+        Homie.setGlobalInputHandler(std::bind(
+                &GWHomie::globalInputHandler,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4
+        ));
 
         Homie.setup();
 
@@ -210,13 +220,9 @@ namespace homie {
             delete outgoingMqttMessage.message;
         }
     }
-}
 
-class GWHomie {
-public:
-    GWHomie() {}
     void send(const char* mac, const char* message, size_t len) {
-        homie::OutgoingMqttMessage o;
+        OutgoingMqttMessage o;
         memcpy(o.mac, mac, 6);
 
         char msg[len + 1];
@@ -224,7 +230,7 @@ public:
         msg[len] = '\0';
         o.message = new String(msg);
 
-        homie::outgoingMqttMessages.push_back(o);
+        outgoingMqttMessages.push_back(o);
 
         Serial.printf("[homie] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], msg);
     }
