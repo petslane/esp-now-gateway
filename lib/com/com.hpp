@@ -14,8 +14,8 @@
 #if DEV_MODE == 2
 #endif // DEV_MODE == 2
 
-#define SERIAL_PIN_1 D1
-#define SERIAL_PIN_2 D2
+#define SERIAL_PIN_1 D5
+#define SERIAL_PIN_2 D4
 
 typedef std::function<bool(String, const char *, uint8, unsigned long)> onNowMessageSendCallback;
 typedef std::vector<onNowMessageSendCallback> onNowMessageSendCallbackVector;
