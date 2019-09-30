@@ -10,9 +10,9 @@
 #include "ArduinoJson.h"
 #include "utils.hpp"
 
-namespace webserver {
-
-    AsyncWebServer server(80);
+class WebServer {
+private:
+    AsyncWebServer * server;
 
     void notFound(AsyncWebServerRequest *request) {
         request->send(404, "text/plain", "Not found");
@@ -216,8 +216,17 @@ namespace webserver {
         return true;
     }
 
+public:
+    WebServer() {
+        this->server = new AsyncWebServer(80);
+    }
+
+    void addHandler(AsyncWebHandler* handler) {
+        this->server->addHandler(handler);
+    }
+
     void setup() {
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
             if (!authenticateRequest(request)) {
                 return;
             }
@@ -226,7 +235,7 @@ namespace webserver {
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });
-        server.on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        server->on("/app.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
             if (!authenticateRequest(request)) {
                 return;
             }
@@ -236,13 +245,13 @@ namespace webserver {
             request->send(response);
         });
 
-        server.on("/api", HTTP_OPTIONS, [](AsyncWebServerRequest *request) {
+        server->on("/api", HTTP_OPTIONS, [this](AsyncWebServerRequest *request) {
             AsyncWebServerResponse *response = request->beginResponse(200);
             response->addHeader("Access-Control-Allow-Headers","Content-Type");
             request->send(response);
         });
 
-        AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/api", [](AsyncWebServerRequest *request, JsonVariant &json) {
+        AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/api", [this](AsyncWebServerRequest *request, JsonVariant &json) {
             if (!authenticateRequest(request)) {
                 return;
             }
@@ -286,14 +295,14 @@ namespace webserver {
             return request->send(400, "text/plain", "Unknown type");
         });
 
-        server.addHandler(handler);
+        server->addHandler(handler);
 
-        server.onNotFound(notFound);
+        server->onNotFound(std::bind(&WebServer::notFound, this, std::placeholders::_1));
         DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-        server.begin();
+        server->begin();
     }
 
-}
+};
 
 #endif // WEBSERVER_INIT_H

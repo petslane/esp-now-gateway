@@ -8,7 +8,8 @@
 #include <webserver.hpp>
 #include <websocket.hpp>
 
-WebSocket * ws = new WebSocket();
+WebServer * webserver = new WebServer();
+WebSocket * ws = new WebSocket(webserver);
 GWHomie * homie = new GWHomie();
 Com * comm = new Com(homie, ws);
 
@@ -25,7 +26,7 @@ void setup() {
     comm->setup();
 #if DEV_MODE == 1
     homie->setup();
-    webserver::setup();
+    webserver->setup();
     ws->setup();
 #elif DEV_MODE == 2
     now->setup();
