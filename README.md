@@ -32,6 +32,7 @@ these remote ESP-NOW devices auto-discoverable by
 - 2 WeMos D1 minis
 - [PlatformIO][PIO-install]
 - MQTT broker/server
+- OLED Shield (Optional)
 
 ### Configurations
 
@@ -43,6 +44,8 @@ Web UI is implemented with [me-no-dev/ESPAsyncWebServer][ESPAsyncWebServer]. Web
 username/password that can be changed with variables `AUTH_USERNAME` and `AUTH_PASSWORD` in `platformio.ini` file.
 WebUI itself is built, compressed and stored in `data/www` folder. Source code for WebUI will be released in separate
 repository.
+
+If OLED shield is used, then uncomment `ENABLE_OLED_SHIELD` variable in `platformio.ini` file.
 
 Two WeMos D1 minis communicate with each-other via dedicated software serial pins implemented with
 [plerup/espsoftwareserial][espsoftwareserial].
@@ -78,3 +81,9 @@ MQTT topic `homie/gateway/message/3505AA600194`
 [espsoftwareserial]: https://github.com/plerup/espsoftwareserial
 [homie-node]: https://github.com/homieiot/convention/blob/develop/convention.md#nodes
 [logo]: image.png
+
+### TODO
+
+- OLED shield buttons - As I have only version 1 (without buttons), then there is no button functionality. In the future
+I would like to implement some-kind of auto-pairing functionality for ESP-NOW devices, then these buttons would become
+very handy.

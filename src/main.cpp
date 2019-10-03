@@ -2,22 +2,31 @@
 #include <Arduino.h>
 #include <buffer.hpp>
 #include <com.hpp>
+#include <stats.hpp>
+Stats * stats = new Stats();
 
 #if DEV_MODE == 1
 #include <homie.hpp>
 #include <webserver.hpp>
 #include <websocket.hpp>
 
+#ifdef ENABLE_OLED_SHIELD
+#include <screen.hpp>
+#endif
+
 WebServer * webserver = new WebServer();
 WebSocket * ws = new WebSocket(webserver);
 GWHomie * homie = new GWHomie();
-Com * comm = new Com(homie, ws);
+Com * comm = new Com(stats, homie, ws);
+#ifdef ENABLE_OLED_SHIELD
+Screen * screen = new Screen(stats);
+#endif
 
 #elif DEV_MODE == 2
 #include <now.hpp>
 
-Com * comm = new Com();
-Now * now = new Now(comm);
+Com * comm = new Com(stats);
+Now * now = new Now(comm, stats);
 #endif
 
 void setup() {
@@ -28,6 +37,9 @@ void setup() {
     homie->setup();
     webserver->setup();
     ws->setup();
+#ifdef ENABLE_OLED_SHIELD
+    screen->setup();
+#endif
 #elif DEV_MODE == 2
     now->setup();
 #endif
@@ -37,9 +49,13 @@ void setup() {
 
 void loop() {
     comm->loop();
+    stats->loop();
 #if DEV_MODE == 1
     homie->loop();
     ws->loop();
+#ifdef ENABLE_OLED_SHIELD
+    screen->loop();
+#endif
 #elif DEV_MODE == 2
     now->loop();
 #endif
