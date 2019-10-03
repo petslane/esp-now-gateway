@@ -6,6 +6,7 @@
 #include <ArduinoJson.h>
 #include "buffer.hpp"
 #include "utils.hpp"
+#include "stats.hpp"
 
 #if DEV_MODE == 1
 #include <homie.hpp>
@@ -23,6 +24,8 @@ typedef std::vector<onNowMessageSendCallback> onNowMessageSendCallbackVector;
 class Com {
 private:
     SoftwareSerial * swSer;
+    Stats * stats;
+    bool statsChanged;
 #if DEV_MODE == 1
     GWHomie * homie;
     WebSocket * ws;
@@ -67,6 +70,11 @@ private:
             unsigned long id =  doc.get<unsigned long>("id");
             Serial.printf("[com] Message %i NOT delivered\n", id);
             ws->textAll("Message not delivered");
+        } else if (type == utils::msgType::stats) {
+            Serial.printf("[com] Stats update from NOW node\n");
+            stats->setNowSentMessagesSuccessful(doc.get<int>("success"));
+            stats->setNowSentMessagesFailed(doc.get<int>("failed"));
+            stats->setNowSentMessagesReceived(doc.get<int>("received"));
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
         } else if (type == (uint8) utils::msgType::send_now_message) {
@@ -84,22 +92,49 @@ private:
 
 public:
 #if DEV_MODE == 1
-    Com(GWHomie * h, WebSocket * ws) {
+    Com(Stats * stats, GWHomie * h, WebSocket * ws) {
         this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false, 256);
         this->homie = h;
         this->ws = ws;
+        this->stats = stats;
+        this->statsChanged = false;
+        stats->addChangeCallback([this](){
+            String text = "Messages stats: Successfully sent=";
+            text.concat(this->stats->getNowSentMessagesSuccessful());
+            text.concat(" Failed=");
+            text.concat(this->stats->getNowSentMessagesFailed());
+            text.concat(" Received=");
+            text.concat(this->stats->getNowSentMessagesReceived());
+            this->ws->textAll((char *) text.c_str());
+        });
     }
 #endif
 #if DEV_MODE == 2
-    Com() {
+    Com(Stats * stats) {
         swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false, 256);
+        this->stats = stats;
+        this->statsChanged = false;
+
+        stats->addChangeCallback([this](){
+            this->statsChanged = true;
+        });
     }
 #endif
-    void send(utils::msgType type, unsigned long id, String name1, String value1) {
+
+    template <typename T1>
+    void send(utils::msgType type, unsigned long id, String name1, T1 value1) {
         String s;
         send(type, id, name1, value1, s, s);
     }
-    void send(utils::msgType type, unsigned long id, String name1, String value1, String name2, String value2) {
+
+    template <typename T1, typename T2>
+    void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2) {
+        String s;
+        send(type, id, name1, value1, name2, value2, s, s);
+    }
+
+    template <typename T1, typename T2, typename T3>
+    void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
         StaticJsonBuffer<200> jsonBuffer;
         JsonObject& json = jsonBuffer.createObject();
 
@@ -112,6 +147,9 @@ public:
         }
         if (name2.length() > 0) {
             json.set(name2, value2);
+        }
+        if (name3.length() > 0) {
+            json.set(name3, value3);
         }
 
         this->swSer->print("\n");
@@ -140,7 +178,7 @@ public:
                 break;
             }
             buffer[bufferPosition] = c;
-            bufferPosition++;
+            bufferPosition = (uint8) (bufferPosition + 1) % 512;
         }
         if (hasFullData) {
             receivedSerialData(buffer, bufferPosition);
@@ -171,6 +209,22 @@ public:
             }
 
         }
+
+#if DEV_MODE == 2
+        if (statsChanged) {
+            statsChanged = false;
+            send(
+                    utils::msgType::stats,
+                    0,
+                    "success",
+                    stats->getNowSentMessagesSuccessful(),
+                    "failed",
+                    stats->getNowSentMessagesFailed(),
+                    "received",
+                    stats->getNowSentMessagesReceived()
+            );
+        }
+#endif
     }
 
     void addOnNowMessageSendListener(onNowMessageSendCallback cb) {

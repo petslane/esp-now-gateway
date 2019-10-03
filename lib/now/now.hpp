@@ -6,6 +6,7 @@
 #include "utils.hpp"
 #include "now_message.hpp"
 #include "com.hpp"
+#include "stats.hpp"
 
 extern "C" {
 #include <espnow.h>
@@ -28,13 +29,20 @@ struct IncomingNowMessage {
 
 static volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 
+// Now callback can not update class instance itself, so create global variables for stats to be synced with Stats instance
+int volatile now_sent_messages_successful = 0;
+int volatile now_sent_messages_failed = 0;
+int volatile now_sent_messages_received = 0;
+
 class Now {
 private:
     Com * com;
+    Stats * stats;
 public:
-    Now(Com * c) {
+    Now(Com * c, Stats * stats) {
         this->com = c;
         this->com->addOnNowMessageSendListener(std::bind(&Now::send, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        this->stats = stats;
     }
 
     bool send(String mac, const char * msg, uint8 len, unsigned long id) {
@@ -106,6 +114,19 @@ public:
                 }
             }
         }
+
+        while (now_sent_messages_successful) {
+            this->stats->addNowSentMessagesSuccessful();
+            now_sent_messages_successful--;
+        }
+        while (now_sent_messages_failed) {
+            this->stats->addNowSentMessagesFailed();
+            now_sent_messages_failed--;
+        }
+        while (now_sent_messages_received) {
+            this->stats->addNowSentMessagesReceived();
+            now_sent_messages_received--;
+        }
     }
 
     void setup() {
@@ -135,6 +156,7 @@ public:
                     incomingBuffer[i].header.errorCount = 0;
                     memcpy((void *) incomingBuffer[i].message, (char *) data, len);
                     incomingBuffer[i].set = true;
+                    now_sent_messages_received++;
                     return;
                 }
             }
@@ -163,8 +185,12 @@ public:
                 msg.buffer_data.errorCount += 1;
 
                 msg.setStatus(msg.buffer_data.errorCount > 3 ? NowMessageStatus::failed : NowMessageStatus::delayed);
+                if (msg.buffer_data.errorCount > 3) {
+                    now_sent_messages_failed++;
+                }
             } else {
                 msg.setStatus(NowMessageStatus::sent);
+                now_sent_messages_successful++;
             }
 
             is_sending = false;

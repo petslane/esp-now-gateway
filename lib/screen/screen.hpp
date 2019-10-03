@@ -1,8 +1,11 @@
+#ifndef SCREEN_INIT_H
+#define SCREEN_INIT_H
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "stats.hpp"
 
-#define OLED_RESET D3  // GPIO0
+#define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
 
 #define NUMFLAKES 10
@@ -22,10 +25,13 @@ class Screen {
 private:
     unsigned long lastUpdate;
     uint8 loader;
+    Stats * stats;
 public:
-    Screen() {
+    Screen(Stats * stats) {
         lastUpdate = 0;
         loader = 0;
+
+        this->stats = stats;
     }
     void setup() {
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -85,8 +91,12 @@ public:
 
         // Messages count
         display.println("Msg (i/o):");
-        display.println("0000/9999");
+        display.print(stats->getNowSentMessagesReceived());
+        display.print("/");
+        display.println(stats->getNowSentMessagesSuccessful());
 
         display.display();
     }
 };
+
+#endif // SCREEN_INIT_H
