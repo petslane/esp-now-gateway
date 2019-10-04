@@ -72,9 +72,8 @@ private:
             ws->textAll("Message not delivered");
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
-            stats->setNowSentMessagesSuccessful(doc.get<int>("success"));
-            stats->setNowSentMessagesFailed(doc.get<int>("failed"));
-            stats->setNowMessagesReceived(doc.get<int>("received"));
+            String data = doc.get<String>("data");
+            stats->unpackRemoteData(data);
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
         } else if (type == (uint8) utils::msgType::send_now_message) {
@@ -216,12 +215,8 @@ public:
             send(
                     utils::msgType::stats,
                     0,
-                    "success",
-                    stats->getNowSentMessagesSuccessful(),
-                    "failed",
-                    stats->getNowSentMessagesFailed(),
-                    "received",
-                    stats->getNowMessagesReceived()
+                    "data",
+                    stats->packRemoteData()
             );
         }
 #endif
