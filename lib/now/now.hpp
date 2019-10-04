@@ -38,14 +38,11 @@ class Now {
 private:
     Com * com;
     Stats * stats;
-public:
-    Now(Com * c, Stats * stats) {
-        this->com = c;
-        this->com->addOnNowMessageSendListener(std::bind(&Now::send, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-        this->stats = stats;
-    }
 
-    bool send(String mac, const char * msg, uint8 len, unsigned long id) {
+    /**
+     * Callback for NOW messages to be sent. Adds message to queue.
+     */
+    bool sendNowMessageOut(String mac, const char *msg, uint8 len, unsigned long id) {
         NowMessage nowMessage;
         if (!nowMessage.setMac(mac)) {
             return false;
@@ -55,7 +52,14 @@ public:
         nowMessage.buffer_data.time = millis();
         nowMessage.buffer_data.id = id;
         nowMessage.buffer_data.errorCount = 0;
+
         return nowMessage.append(msg, len) > -1;
+    }
+public:
+    Now(Com * c, Stats * stats) {
+        this->com = c;
+        this->com->addOnNowMessageSendListener(std::bind(&Now::sendNowMessageOut, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        this->stats = stats;
     }
 
     void loop() {
