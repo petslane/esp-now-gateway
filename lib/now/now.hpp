@@ -32,7 +32,7 @@ static volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 // Now callback can not update class instance itself, so create global variables for stats to be synced with Stats instance
 int volatile now_sent_messages_successful = 0;
 int volatile now_sent_messages_failed = 0;
-int volatile now_sent_messages_received = 0;
+int volatile now_messages_received = 0;
 
 class Now {
 private:
@@ -114,17 +114,17 @@ public:
             }
         }
 
-        while (now_sent_messages_successful) {
-            this->stats->addNowSentMessagesSuccessful();
-            now_sent_messages_successful--;
+        if (now_sent_messages_successful) {
+            this->stats->addNowSentMessagesSuccessful(now_sent_messages_successful);
+            now_sent_messages_successful = 0;
         }
-        while (now_sent_messages_failed) {
-            this->stats->addNowSentMessagesFailed();
-            now_sent_messages_failed--;
+        if (now_sent_messages_failed) {
+            this->stats->addNowSentMessagesFailed(now_sent_messages_failed);
+            now_sent_messages_failed = 0;
         }
-        while (now_sent_messages_received) {
-            this->stats->addNowSentMessagesReceived();
-            now_sent_messages_received--;
+        if (now_messages_received) {
+            this->stats->addNowMessagesReceived(now_messages_received);
+            now_messages_received = 0;
         }
     }
 
@@ -155,7 +155,7 @@ public:
                     incomingBuffer[i].header.errorCount = 0;
                     memcpy((void *) incomingBuffer[i].message, (char *) data, len);
                     incomingBuffer[i].set = true;
-                    now_sent_messages_received++;
+                    now_messages_received++;
                     return;
                 }
             }

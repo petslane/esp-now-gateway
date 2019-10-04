@@ -74,7 +74,7 @@ private:
             Serial.printf("[com] Stats update from NOW node\n");
             stats->setNowSentMessagesSuccessful(doc.get<int>("success"));
             stats->setNowSentMessagesFailed(doc.get<int>("failed"));
-            stats->setNowSentMessagesReceived(doc.get<int>("received"));
+            stats->setNowMessagesReceived(doc.get<int>("received"));
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
         } else if (type == (uint8) utils::msgType::send_now_message) {
@@ -104,7 +104,7 @@ public:
             text.concat(" Failed=");
             text.concat(this->stats->getNowSentMessagesFailed());
             text.concat(" Received=");
-            text.concat(this->stats->getNowSentMessagesReceived());
+            text.concat(this->stats->getNowMessagesReceived());
             this->ws->textAll((char *) text.c_str());
         });
     }
@@ -221,7 +221,7 @@ public:
                     "failed",
                     stats->getNowSentMessagesFailed(),
                     "received",
-                    stats->getNowSentMessagesReceived()
+                    stats->getNowMessagesReceived()
             );
         }
 #endif

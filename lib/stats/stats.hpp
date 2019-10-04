@@ -5,7 +5,7 @@ class Stats {
 private:
     int volatile now_sent_messages_successful;
     int volatile now_sent_messages_failed;
-    int volatile now_sent_messages_received;
+    int volatile now_messages_received;
 
     bool stats_updated;
 
@@ -15,7 +15,7 @@ public:
     Stats() {
         now_sent_messages_successful = 0;
         now_sent_messages_failed = 0;
-        now_sent_messages_received = 0;
+        now_messages_received = 0;
 
         stats_updated = true;
 
@@ -36,19 +36,19 @@ public:
         onStatsChangeCallbackVector.push_back(cb);
     }
 
-    void addNowSentMessagesSuccessful() {
+    void addNowSentMessagesSuccessful(int value = 1) {
         stats_updated = true;
-        now_sent_messages_successful += 1;
+        now_sent_messages_successful += value;
     }
 
-    void addNowSentMessagesFailed() {
+    void addNowSentMessagesFailed(int value = 1) {
         stats_updated = true;
-        now_sent_messages_failed += 1;
+        now_sent_messages_failed += value;
     }
 
-    void addNowSentMessagesReceived() {
+    void addNowMessagesReceived(int value = 1) {
         stats_updated = true;
-        now_sent_messages_received += 1;
+        now_messages_received += value;
     }
 
     void setNowSentMessagesSuccessful(int value) {
@@ -61,9 +61,9 @@ public:
         now_sent_messages_failed = value;
     }
 
-    void setNowSentMessagesReceived(int value) {
+    void setNowMessagesReceived(int value) {
         stats_updated = true;
-        now_sent_messages_received = value;
+        now_messages_received = value;
     }
 
     int getNowSentMessagesSuccessful() {
@@ -74,8 +74,8 @@ public:
         return now_sent_messages_failed;
     }
 
-    int getNowSentMessagesReceived() {
-        return now_sent_messages_received;
+    int getNowMessagesReceived() {
+        return now_messages_received;
     }
 };
 

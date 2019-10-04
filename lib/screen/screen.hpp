@@ -91,7 +91,7 @@ public:
 
         // Messages count
         display.println("Msg (i/o):");
-        display.print(stats->getNowSentMessagesReceived());
+        display.print(stats->getNowMessagesReceived());
         display.print("/");
         display.println(stats->getNowSentMessagesSuccessful());
 
