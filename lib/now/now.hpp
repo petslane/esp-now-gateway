@@ -13,7 +13,7 @@ extern "C" {
 #include "user_interface.h"
 }
 
-#define INCOMING_BUFFER_SIZE 10
+#define INCOMING_BUFFER_SIZE 20
 
 uint8_t gatewayMac[] = {0x30, 0x30, 0x30, 0x30, 0x30, 0x30};
 //uint8_t gatewayMac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x33};
