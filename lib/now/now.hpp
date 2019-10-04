@@ -18,7 +18,9 @@ extern "C" {
 uint8_t gatewayMac[] = {0x30, 0x30, 0x30, 0x30, 0x30, 0x30};
 //uint8_t gatewayMac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x33};
 
+// is currently sending a message
 static volatile bool is_sending = false;
+// buffer index of message being sent
 static int sending_message_header_index = 0;
 
 struct IncomingNowMessage {
@@ -27,7 +29,12 @@ struct IncomingNowMessage {
     char message[250];
 };
 
-static volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
+// index of incomingBuffer where next value should be saved if free
+volatile uint8 incomingBufferFreeSlot = 0;
+// index of incomingBuffer (if set) that should be saved to now message buffer
+volatile uint8 incomingBufferFilledSlot = 0;
+// volatile buffer for accepting incoming NOW messages, from here messages move to `now_data_buffer`
+volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 
 // Now callback can not update class instance itself, so create global variables for stats to be synced with Stats instance
 int volatile now_sent_messages_successful = 0;
@@ -63,13 +70,18 @@ public:
     }
 
     void loop() {
-        for (uint8 i=0; i < INCOMING_BUFFER_SIZE; i++) {
-            if (incomingBuffer[i].set) {
-                NowMessage msg;
-                memcpy(& msg.buffer_data, (const void *) & incomingBuffer[i].header, sizeof(NowMessageHeader));
-                msg.append((const char *) incomingBuffer[i].message, msg.buffer_data.msgLen);
-                incomingBuffer[i].set = false;
+        // move `incomingBuffer` messages to `now_data_buffer`
+        while (true) {
+            if (!incomingBuffer[incomingBufferFilledSlot].set) {
+                break;
             }
+            // move incoming NOW message from `incomingBuffer` to `now_data_buffer`
+            NowMessage msg;
+            memcpy(& msg.buffer_data, (const void *) & incomingBuffer[incomingBufferFilledSlot].header, sizeof(NowMessageHeader));
+            msg.append((const char *) incomingBuffer[incomingBufferFilledSlot].message, msg.buffer_data.msgLen);
+            incomingBuffer[incomingBufferFilledSlot].set = false;
+
+            incomingBufferFilledSlot = (incomingBufferFilledSlot + (uint8) 1) % (uint8) INCOMING_BUFFER_SIZE;
         }
 
         int pos = 0;
@@ -85,6 +97,9 @@ public:
                 utils::msgType type = msg.buffer_data.status == NowMessageStatus::sent ? utils::msgType::now_message_delivered : utils::msgType::now_message_not_delivered;
                 this->com->send(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
                 msg.remove();
+                if (is_sending && pos < sending_message_header_index) {
+                    sending_message_header_index--;
+                }
                 continue;
             }
 
@@ -92,6 +107,9 @@ public:
                 String mac = utils::macCharArrayToString(msg.buffer_data.mac);
                 this->com->send(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
                 msg.remove();
+                if (is_sending && pos < sending_message_header_index) {
+                    sending_message_header_index--;
+                }
                 continue;
             }
 
@@ -146,21 +164,23 @@ public:
 
         // receiving now
         esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) {
-            for (uint8 i=0; i < INCOMING_BUFFER_SIZE; i++) {
-                if (!incomingBuffer[i].set) {
-                    memcpy((void *) incomingBuffer[i].header.mac, mac, 6);
-                    incomingBuffer[i].header.msgLen = len;
-                    incomingBuffer[i].header.status = NowMessageStatus::received;
-                    incomingBuffer[i].header.time = millis();
-                    incomingBuffer[i].header.id = millis();
-                    incomingBuffer[i].header.errorCount = 0;
-                    memcpy((void *) incomingBuffer[i].message, (char *) data, len);
-                    incomingBuffer[i].set = true;
-                    now_messages_received++;
-                    return;
-                }
+            if (incomingBuffer[incomingBufferFreeSlot].set) {
+                // No free slots for accepting incoming NOW message, discarding message
+                return;
             }
 
+            // save incoming message to buffer
+            memcpy((void *) incomingBuffer[incomingBufferFreeSlot].header.mac, mac, 6);
+            incomingBuffer[incomingBufferFreeSlot].header.msgLen = len;
+            incomingBuffer[incomingBufferFreeSlot].header.status = NowMessageStatus::received;
+            incomingBuffer[incomingBufferFreeSlot].header.time = millis();
+            incomingBuffer[incomingBufferFreeSlot].header.id = millis();
+            incomingBuffer[incomingBufferFreeSlot].header.errorCount = 0;
+            memcpy((void *) incomingBuffer[incomingBufferFreeSlot].message, (char *) data, len);
+            incomingBuffer[incomingBufferFreeSlot].set = true;
+            incomingBufferFreeSlot = (incomingBufferFreeSlot + (uint8) 1) % (uint8) INCOMING_BUFFER_SIZE;
+
+            now_messages_received++;
         });
 
         // sent now cb
