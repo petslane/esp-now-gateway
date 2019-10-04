@@ -142,9 +142,6 @@ public:
 
         // receiving now
         esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) {
-            char raw[len + 1];
-            memcpy((void *) raw, (char *) data, len);
-            Serial.printf("[now] Incoming NOW message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], raw);
             for (uint8 i=0; i < INCOMING_BUFFER_SIZE; i++) {
                 if (!incomingBuffer[i].set) {
                     memcpy((void *) incomingBuffer[i].header.mac, mac, 6);
@@ -160,7 +157,6 @@ public:
                 }
             }
 
-            Serial.println("[now] !!!!!!!!!!!!!!!! Received message, but previous message still in buffer");
         });
 
         // sent now cb
