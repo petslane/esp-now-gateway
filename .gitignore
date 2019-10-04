@@ -2,3 +2,5 @@
 .pio
 cmake-build-debug
 CMakeListsPrivate.txt
+.pioenvs
+.piolibdeps
