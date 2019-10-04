@@ -68,50 +68,49 @@ public:
             }
         }
 
-        if (!is_sending) {
-            int pos = 0;
-            while (true) {
-                NowMessage msg(pos);
-                if (!msg.isSaved()) {
-                    break;
-                }
+        int pos = 0;
+        while (true) {
+            yield();
+            NowMessage msg(pos);
+            if (!msg.isSaved()) {
+                break;
+            }
 
-                if (msg.buffer_data.status == NowMessageStatus::sent || msg.buffer_data.status == NowMessageStatus::failed) {
-                    String mac = utils::macCharArrayToString(msg.buffer_data.mac);
-                    utils::msgType type = msg.buffer_data.status == NowMessageStatus::sent ? utils::msgType::now_message_delivered : utils::msgType::now_message_not_delivered;
-                    this->com->send(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
-                    msg.remove();
-                    continue;
-                }
+            if (msg.buffer_data.status == NowMessageStatus::sent || msg.buffer_data.status == NowMessageStatus::failed) {
+                String mac = utils::macCharArrayToString(msg.buffer_data.mac);
+                utils::msgType type = msg.buffer_data.status == NowMessageStatus::sent ? utils::msgType::now_message_delivered : utils::msgType::now_message_not_delivered;
+                this->com->send(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
+                msg.remove();
+                continue;
+            }
 
-                if (msg.buffer_data.status == NowMessageStatus::received) {
-                    String mac = utils::macCharArrayToString(msg.buffer_data.mac);
-                    this->com->send(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
-                    msg.remove();
-                    continue;
-                }
+            if (msg.buffer_data.status == NowMessageStatus::received) {
+                String mac = utils::macCharArrayToString(msg.buffer_data.mac);
+                this->com->send(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
+                msg.remove();
+                continue;
+            }
 
-                if (msg.buffer_data.status == NowMessageStatus::delayed && (signed long) (msg.buffer_data.time - millis()) < 0) {
-                    msg.buffer_data.status = NowMessageStatus::queued;
-                }
+            if (msg.buffer_data.status == NowMessageStatus::delayed && (signed long) (msg.buffer_data.time - millis()) < 0) {
+                msg.buffer_data.status = NowMessageStatus::queued;
+            }
 
-                if (msg.buffer_data.status == NowMessageStatus::queued && (signed long) (msg.buffer_data.time - millis()) < 0) {
-                    is_sending = true;
-                    sending_message_header_index = pos;
+            if (msg.buffer_data.status == NowMessageStatus::queued && (signed long) (msg.buffer_data.time - millis()) < 0 && !is_sending) {
+                is_sending = true;
+                sending_message_header_index = pos;
 
-                    Serial.printf("[now] Sending NOW message %02X:%02X:%02X:%02X:%02X:%02X: %s\n", msg.buffer_data.mac[0], msg.buffer_data.mac[1], msg.buffer_data.mac[2], msg.buffer_data.mac[3], msg.buffer_data.mac[4], msg.buffer_data.mac[5], msg.getMessage().c_str());
+                Serial.printf("[now] Sending NOW message %02X:%02X:%02X:%02X:%02X:%02X: %s\n", msg.buffer_data.mac[0], msg.buffer_data.mac[1], msg.buffer_data.mac[2], msg.buffer_data.mac[3], msg.buffer_data.mac[4], msg.buffer_data.mac[5], msg.getMessage().c_str());
 
-                    msg.setStatus(NowMessageStatus::sending);
+                msg.setStatus(NowMessageStatus::sending);
 
-                    String message = msg.getMessage();
-                    esp_now_send((u8 *) msg.buffer_data.mac, (u8 *) message.c_str(), message.length());
-                    break;
-                }
+                String message = msg.getMessage();
+                esp_now_send((u8 *) msg.buffer_data.mac, (u8 *) message.c_str(), message.length());
+                break;
+            }
 
-                pos = msg.hasNext();
-                if (pos < 0) {
-                    break;
-                }
+            pos = msg.hasNext();
+            if (pos < 0) {
+                break;
             }
         }
 
