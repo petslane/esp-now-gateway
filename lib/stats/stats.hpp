@@ -9,6 +9,10 @@ private:
         int volatile now_sent_messages_successful;
         int volatile now_sent_messages_failed;
         int volatile now_messages_received;
+        int volatile incoming_buffer_size;
+        int volatile incoming_buffer_free;
+        int volatile messages_buffer_size;
+        int volatile messages_buffer_free;
     } remoteData;
 
     struct {
@@ -23,6 +27,10 @@ public:
         remoteData.now_sent_messages_successful = 0;
         remoteData.now_sent_messages_failed = 0;
         remoteData.now_messages_received = 0;
+        remoteData.incoming_buffer_size = 0;
+        remoteData.incoming_buffer_free = 0;
+        remoteData.messages_buffer_size = 0;
+        remoteData.messages_buffer_free = 0;
 
         stats_updated = true;
 
@@ -81,6 +89,16 @@ public:
         remoteData.now_messages_received += value;
     }
 
+    void addIncomingBufferFree(int value = 1) {
+        stats_updated = true;
+        remoteData.incoming_buffer_free += value;
+    }
+
+    void addMessageBufferFree(int value = 1) {
+        stats_updated = true;
+        remoteData.messages_buffer_free += value;
+    }
+
     void setNowSentMessagesSuccessful(int value) {
         stats_updated = true;
         remoteData.now_sent_messages_successful = value;
@@ -96,6 +114,26 @@ public:
         remoteData.now_messages_received = value;
     }
 
+    void setIncomingBufferSize(int value) {
+        stats_updated = true;
+        remoteData.incoming_buffer_size = value;
+    }
+
+    void setIncomingBufferFree(int value) {
+        stats_updated = true;
+        remoteData.incoming_buffer_free = value;
+    }
+
+    void setMessageBufferSize(int value) {
+        stats_updated = true;
+        remoteData.messages_buffer_size = value;
+    }
+
+    void setMessageBufferFree(int value) {
+        stats_updated = true;
+        remoteData.messages_buffer_free = value;
+    }
+
     int getNowSentMessagesSuccessful() {
         return remoteData.now_sent_messages_successful;
     }
@@ -106,6 +144,22 @@ public:
 
     int getNowMessagesReceived() {
         return remoteData.now_messages_received;
+    }
+
+    int getIncomingBufferSize() {
+        return remoteData.incoming_buffer_size;
+    }
+
+    int getIncomingBufferFree() {
+        return remoteData.incoming_buffer_free;
+    }
+
+    int getMessageBufferSize() {
+        return remoteData.messages_buffer_size;
+    }
+
+    int getMessageBufferFree() {
+        return remoteData.messages_buffer_free;
     }
 };
 

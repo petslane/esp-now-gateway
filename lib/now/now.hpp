@@ -40,6 +40,8 @@ volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 int volatile now_sent_messages_successful = 0;
 int volatile now_sent_messages_failed = 0;
 int volatile now_messages_received = 0;
+int volatile incoming_buffer_free = INCOMING_BUFFER_SIZE;
+int volatile message_buffer_free = NOW_BUFFER_SIZE;
 
 class Now {
 private:
@@ -60,13 +62,22 @@ private:
         nowMessage.buffer_data.id = id;
         nowMessage.buffer_data.errorCount = 0;
 
-        return nowMessage.append(msg, len) > -1;
+        bool added = nowMessage.append(msg, len) > -1;
+        if (added) {
+            message_buffer_free -= sizeof(NowMessageHeader);
+            message_buffer_free -= len;
+        }
+        return added;
     }
 public:
     Now(Com * c, Stats * stats) {
         this->com = c;
         this->com->addOnNowMessageSendListener(std::bind(&Now::sendNowMessageOut, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
         this->stats = stats;
+        this->stats->setIncomingBufferFree(INCOMING_BUFFER_SIZE);
+        this->stats->setIncomingBufferSize(INCOMING_BUFFER_SIZE);
+        this->stats->setMessageBufferFree(NOW_BUFFER_SIZE);
+        this->stats->setMessageBufferSize(NOW_BUFFER_SIZE);
     }
 
     void loop() {
@@ -83,6 +94,9 @@ public:
                 break;
             }
             incomingBuffer[incomingBufferFilledSlot].set = false;
+            incoming_buffer_free++;
+            message_buffer_free -= sizeof(NowMessageHeader);
+            message_buffer_free -= msg.buffer_data.msgLen;
 
             incomingBufferFilledSlot = (incomingBufferFilledSlot + (uint8) 1) % (uint8) INCOMING_BUFFER_SIZE;
         }
@@ -103,6 +117,8 @@ public:
                 String mac = utils::macCharArrayToString(msg.buffer_data.mac);
                 utils::msgType type = msg.buffer_data.status == NowMessageStatus::sent ? utils::msgType::now_message_delivered : utils::msgType::now_message_not_delivered;
                 this->com->send(type, msg.buffer_data.id, "to", mac, "msg", msg.getMessage());
+                message_buffer_free += sizeof(NowMessageHeader);
+                message_buffer_free += msg.buffer_data.msgLen;
                 msg.remove();
                 if (is_sending && pos < sending_message_header_index) {
                     sending_message_header_index--;
@@ -113,6 +129,8 @@ public:
             if (msg.buffer_data.status == NowMessageStatus::received) {
                 String mac = utils::macCharArrayToString(msg.buffer_data.mac);
                 this->com->send(utils::msgType::received_now_message, msg.buffer_data.id, "from", mac, "msg", msg.getMessage());
+                message_buffer_free += sizeof(NowMessageHeader);
+                message_buffer_free += msg.buffer_data.msgLen;
                 msg.remove();
                 if (is_sending && pos < sending_message_header_index) {
                     sending_message_header_index--;
@@ -155,6 +173,12 @@ public:
             this->stats->addNowMessagesReceived(now_messages_received);
             now_messages_received = 0;
         }
+        if (incoming_buffer_free != this->stats->getIncomingBufferFree()) {
+            this->stats->setIncomingBufferFree(incoming_buffer_free);
+        }
+        if (message_buffer_free != this->stats->getMessageBufferFree()) {
+            this->stats->setMessageBufferFree(message_buffer_free);
+        }
     }
 
     void setup() {
@@ -185,6 +209,7 @@ public:
             incomingBuffer[incomingBufferFreeSlot].header.errorCount = 0;
             memcpy((void *) incomingBuffer[incomingBufferFreeSlot].message, (char *) data, len);
             incomingBuffer[incomingBufferFreeSlot].set = true;
+            incoming_buffer_free--;
             incomingBufferFreeSlot = (incomingBufferFreeSlot + (uint8) 1) % (uint8) INCOMING_BUFFER_SIZE;
 
             now_messages_received++;
