@@ -25,6 +25,7 @@ class Com {
 private:
     SoftwareSerial * swSer;
     Stats * stats;
+    long lastStatsReportTime = 0;
     bool statsChanged;
 #if DEV_MODE == 1
     GWHomie * homie;
@@ -210,7 +211,8 @@ public:
         }
 
 #if DEV_MODE == 2
-        if (statsChanged) {
+        if (statsChanged && millis() - lastStatsReportTime > 300) {
+            lastStatsReportTime = millis();
             statsChanged = false;
             send(
                     utils::msgType::stats,
