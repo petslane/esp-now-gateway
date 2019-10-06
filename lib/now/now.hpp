@@ -78,7 +78,10 @@ public:
             // move incoming NOW message from `incomingBuffer` to `now_data_buffer`
             NowMessage msg;
             memcpy(& msg.buffer_data, (const void *) & incomingBuffer[incomingBufferFilledSlot].header, sizeof(NowMessageHeader));
-            msg.append((const char *) incomingBuffer[incomingBufferFilledSlot].message, msg.buffer_data.msgLen);
+            int added = msg.append((const char *) incomingBuffer[incomingBufferFilledSlot].message, msg.buffer_data.msgLen);
+            if (added == -1) {
+                break;
+            }
             incomingBuffer[incomingBufferFilledSlot].set = false;
 
             incomingBufferFilledSlot = (incomingBufferFilledSlot + (uint8) 1) % (uint8) INCOMING_BUFFER_SIZE;
