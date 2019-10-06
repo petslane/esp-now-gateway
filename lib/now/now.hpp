@@ -85,8 +85,12 @@ public:
         }
 
         int pos = 0;
+        long loopStartTime = millis();
+        uint8 previousIncomingBufferFreeSlot = incomingBufferFreeSlot;
         while (true) {
-            yield();
+            if (previousIncomingBufferFreeSlot != incomingBufferFreeSlot || millis() - loopStartTime > 500) {
+                break;
+            }
             NowMessage msg(pos);
             if (!msg.isSaved()) {
                 break;
