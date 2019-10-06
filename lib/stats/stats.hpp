@@ -9,6 +9,7 @@ private:
         int volatile now_sent_messages_successful;
         int volatile now_sent_messages_failed;
         int volatile now_messages_received;
+        int volatile missed_incoming_now_messages;
         int volatile incoming_buffer_size;
         int volatile incoming_buffer_free;
         int volatile messages_buffer_size;
@@ -27,6 +28,7 @@ public:
         remoteData.now_sent_messages_successful = 0;
         remoteData.now_sent_messages_failed = 0;
         remoteData.now_messages_received = 0;
+        remoteData.missed_incoming_now_messages = 0;
         remoteData.incoming_buffer_size = 0;
         remoteData.incoming_buffer_free = 0;
         remoteData.messages_buffer_size = 0;
@@ -89,6 +91,11 @@ public:
         remoteData.now_messages_received += value;
     }
 
+    void addMissedIncomingNowMessages(int value = 1) {
+        stats_updated = true;
+        remoteData.missed_incoming_now_messages += value;
+    }
+
     void addIncomingBufferFree(int value = 1) {
         stats_updated = true;
         remoteData.incoming_buffer_free += value;
@@ -112,6 +119,11 @@ public:
     void setNowMessagesReceived(int value) {
         stats_updated = true;
         remoteData.now_messages_received = value;
+    }
+
+    void setMissedIncomingNowMessages(int value) {
+        stats_updated = true;
+        remoteData.missed_incoming_now_messages = value;
     }
 
     void setIncomingBufferSize(int value) {
@@ -144,6 +156,10 @@ public:
 
     int getNowMessagesReceived() {
         return remoteData.now_messages_received;
+    }
+
+    int getMissedIncomingNowMessages() {
+        return remoteData.missed_incoming_now_messages;
     }
 
     int getIncomingBufferSize() {

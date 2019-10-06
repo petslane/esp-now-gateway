@@ -40,6 +40,7 @@ volatile IncomingNowMessage incomingBuffer[INCOMING_BUFFER_SIZE];
 int volatile now_sent_messages_successful = 0;
 int volatile now_sent_messages_failed = 0;
 int volatile now_messages_received = 0;
+int volatile missed_incoming_now_messages = 0;
 int volatile incoming_buffer_free = INCOMING_BUFFER_SIZE;
 int volatile message_buffer_free = NOW_BUFFER_SIZE;
 
@@ -173,6 +174,10 @@ public:
             this->stats->addNowMessagesReceived(now_messages_received);
             now_messages_received = 0;
         }
+        if (missed_incoming_now_messages) {
+            this->stats->addMissedIncomingNowMessages(missed_incoming_now_messages);
+            missed_incoming_now_messages = 0;
+        }
         if (incoming_buffer_free != this->stats->getIncomingBufferFree()) {
             this->stats->setIncomingBufferFree(incoming_buffer_free);
         }
@@ -197,6 +202,7 @@ public:
         esp_now_register_recv_cb([](uint8_t *mac, uint8_t *data, uint8_t len) {
             if (incomingBuffer[incomingBufferFreeSlot].set) {
                 // No free slots for accepting incoming NOW message, discarding message
+                missed_incoming_now_messages++;
                 return;
             }
 
