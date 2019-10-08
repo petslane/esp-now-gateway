@@ -147,7 +147,7 @@ public:
 
     template <typename T1, typename T2, typename T3>
     void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
-        StaticJsonBuffer<200> jsonBuffer;
+        StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
         JsonObject& json = jsonBuffer.createObject();
 
         json.set("type", (int) type);
@@ -194,7 +194,7 @@ public:
         if (!Buffer::is_buffer_empty() && !this->swSer->available()) {
             Buffer::Index dataIndex = Buffer::get_index(0);
             if (dataIndex.type == utils::msgType::send_now_message) {
-                StaticJsonBuffer<300> jsonBuffer;
+                StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
                 JsonObject& root = jsonBuffer.createObject();
                 root["type"] = (int) utils::msgType::send_now_message;
                 const String string = Buffer::get_data(0);
