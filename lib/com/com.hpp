@@ -90,6 +90,18 @@ private:
         }
     }
 
+    void sendJson(JsonObject & json) {
+        String buf;
+        buf += '\n';
+        json.printTo(buf);
+        buf += '\n';
+
+        this->swSer->print(buf);
+
+        Serial.print("[com] Sending: ");
+        Serial.print(buf.substring(1));
+    }
+
 public:
 #if DEV_MODE == 1
     Com(Stats * stats, GWHomie * h, WebSocket * ws) {
@@ -152,13 +164,7 @@ public:
             json.set(name3, value3);
         }
 
-        this->swSer->print("\n");
-        json.printTo(*this->swSer);
-        this->swSer->print("\n");
-
-        Serial.print("[com] Sending: ");
-        json.printTo(Serial);
-        Serial.println();
+        sendJson(json);
     }
 
     void setup() {
@@ -197,13 +203,8 @@ public:
                 if (dataIndex.id) {
                     root["id"] = dataIndex.id;
                 }
-                this->swSer->println();
-                root.printTo(*this->swSer);
-                this->swSer->println();
 
-                Serial.print("[com] Sending: ");
-                root.printTo(Serial);
-                Serial.println();
+                sendJson(root);
 
                 Buffer::remove(0);
             }
