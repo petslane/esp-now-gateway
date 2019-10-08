@@ -1,11 +1,23 @@
 #ifndef STATS_INIT_H
 #define STATS_INIT_H
 
+#include <Base64.h>
+
 class Stats {
 private:
-    int volatile now_sent_messages_successful;
-    int volatile now_sent_messages_failed;
-    int volatile now_sent_messages_received;
+    struct {
+        int volatile now_sent_messages_successful;
+        int volatile now_sent_messages_failed;
+        int volatile now_messages_received;
+        int volatile missed_incoming_now_messages;
+        int volatile incoming_buffer_size;
+        int volatile incoming_buffer_free;
+        int volatile messages_buffer_size;
+        int volatile messages_buffer_free;
+    } remoteData;
+
+    struct {
+    } localData;
 
     bool stats_updated;
 
@@ -13,9 +25,14 @@ private:
     std::vector<onStatsChangeCallback> onStatsChangeCallbackVector;
 public:
     Stats() {
-        now_sent_messages_successful = 0;
-        now_sent_messages_failed = 0;
-        now_sent_messages_received = 0;
+        remoteData.now_sent_messages_successful = 0;
+        remoteData.now_sent_messages_failed = 0;
+        remoteData.now_messages_received = 0;
+        remoteData.missed_incoming_now_messages = 0;
+        remoteData.incoming_buffer_size = 0;
+        remoteData.incoming_buffer_free = 0;
+        remoteData.messages_buffer_size = 0;
+        remoteData.messages_buffer_free = 0;
 
         stats_updated = true;
 
@@ -32,50 +49,133 @@ public:
         }
     }
 
+    String packRemoteData() {
+        char data[sizeof(remoteData)];
+        memcpy(data, &remoteData, sizeof(remoteData));
+        int base64length = Base64.encodedLength(sizeof(remoteData));
+        char base64[base64length];
+        Base64.encode(base64, data, sizeof(remoteData));
+
+        return String(base64);
+    }
+
+    void unpackRemoteData(String base64Str) {
+        int base64StrLen = base64Str.length();
+
+        int decodedLen = Base64.decodedLength((char *) base64Str.c_str(), base64StrLen);
+
+        char decodedString[decodedLen];
+        Base64.decode(decodedString, (char *) base64Str.c_str(), base64StrLen);
+
+        memcpy(&remoteData, decodedString, sizeof(remoteData));
+
+        stats_updated = true;
+    }
+
     void addChangeCallback(onStatsChangeCallback cb) {
         onStatsChangeCallbackVector.push_back(cb);
     }
 
-    void addNowSentMessagesSuccessful() {
+    void addNowSentMessagesSuccessful(int value = 1) {
         stats_updated = true;
-        now_sent_messages_successful += 1;
+        remoteData.now_sent_messages_successful += value;
     }
 
-    void addNowSentMessagesFailed() {
+    void addNowSentMessagesFailed(int value = 1) {
         stats_updated = true;
-        now_sent_messages_failed += 1;
+        remoteData.now_sent_messages_failed += value;
     }
 
-    void addNowSentMessagesReceived() {
+    void addNowMessagesReceived(int value = 1) {
         stats_updated = true;
-        now_sent_messages_received += 1;
+        remoteData.now_messages_received += value;
+    }
+
+    void addMissedIncomingNowMessages(int value = 1) {
+        stats_updated = true;
+        remoteData.missed_incoming_now_messages += value;
+    }
+
+    void addIncomingBufferFree(int value = 1) {
+        stats_updated = true;
+        remoteData.incoming_buffer_free += value;
+    }
+
+    void addMessageBufferFree(int value = 1) {
+        stats_updated = true;
+        remoteData.messages_buffer_free += value;
     }
 
     void setNowSentMessagesSuccessful(int value) {
         stats_updated = true;
-        now_sent_messages_successful = value;
+        remoteData.now_sent_messages_successful = value;
     }
 
     void setNowSentMessagesFailed(int value) {
         stats_updated = true;
-        now_sent_messages_failed = value;
+        remoteData.now_sent_messages_failed = value;
     }
 
-    void setNowSentMessagesReceived(int value) {
+    void setNowMessagesReceived(int value) {
         stats_updated = true;
-        now_sent_messages_received = value;
+        remoteData.now_messages_received = value;
+    }
+
+    void setMissedIncomingNowMessages(int value) {
+        stats_updated = true;
+        remoteData.missed_incoming_now_messages = value;
+    }
+
+    void setIncomingBufferSize(int value) {
+        stats_updated = true;
+        remoteData.incoming_buffer_size = value;
+    }
+
+    void setIncomingBufferFree(int value) {
+        stats_updated = true;
+        remoteData.incoming_buffer_free = value;
+    }
+
+    void setMessageBufferSize(int value) {
+        stats_updated = true;
+        remoteData.messages_buffer_size = value;
+    }
+
+    void setMessageBufferFree(int value) {
+        stats_updated = true;
+        remoteData.messages_buffer_free = value;
     }
 
     int getNowSentMessagesSuccessful() {
-        return now_sent_messages_successful;
+        return remoteData.now_sent_messages_successful;
     }
 
     int getNowSentMessagesFailed() {
-        return now_sent_messages_failed;
+        return remoteData.now_sent_messages_failed;
     }
 
-    int getNowSentMessagesReceived() {
-        return now_sent_messages_received;
+    int getNowMessagesReceived() {
+        return remoteData.now_messages_received;
+    }
+
+    int getMissedIncomingNowMessages() {
+        return remoteData.missed_incoming_now_messages;
+    }
+
+    int getIncomingBufferSize() {
+        return remoteData.incoming_buffer_size;
+    }
+
+    int getIncomingBufferFree() {
+        return remoteData.incoming_buffer_free;
+    }
+
+    int getMessageBufferSize() {
+        return remoteData.messages_buffer_size;
+    }
+
+    int getMessageBufferFree() {
+        return remoteData.messages_buffer_free;
     }
 };
 

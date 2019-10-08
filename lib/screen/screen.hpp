@@ -91,9 +91,14 @@ public:
 
         // Messages count
         display.println("Msg (i/o):");
-        display.print(stats->getNowSentMessagesReceived());
+        display.print(stats->getNowMessagesReceived());
         display.print("/");
         display.println(stats->getNowSentMessagesSuccessful());
+
+        int buffer1FreeRelative = stats->getIncomingBufferSize() ? 100 * stats->getIncomingBufferFree() / stats->getIncomingBufferSize() : 0;
+        int buffer2FreeRelative = stats->getMessageBufferSize() ? 100 * stats->getMessageBufferFree() / stats->getMessageBufferSize() : 0;
+        display.drawLine(0, 46, 63 * buffer1FreeRelative / 100, 46, WHITE);
+        display.drawLine(0, 47, 63 * buffer2FreeRelative / 100, 47, WHITE);
 
         display.display();
     }

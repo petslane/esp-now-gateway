@@ -25,6 +25,7 @@ class Com {
 private:
     SoftwareSerial * swSer;
     Stats * stats;
+    long lastStatsReportTime = 0;
     bool statsChanged;
 #if DEV_MODE == 1
     GWHomie * homie;
@@ -72,9 +73,8 @@ private:
             ws->textAll("Message not delivered");
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
-            stats->setNowSentMessagesSuccessful(doc.get<int>("success"));
-            stats->setNowSentMessagesFailed(doc.get<int>("failed"));
-            stats->setNowSentMessagesReceived(doc.get<int>("received"));
+            String data = doc.get<String>("data");
+            stats->unpackRemoteData(data);
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
         } else if (type == (uint8) utils::msgType::send_now_message) {
@@ -88,6 +88,18 @@ private:
             });
 #endif // DEV_MODE == 2
         }
+    }
+
+    void sendJson(JsonObject & json) {
+        String buf;
+        buf += '\n';
+        json.printTo(buf);
+        buf += '\n';
+
+        this->swSer->print(buf);
+
+        Serial.print("[com] Sending: ");
+        Serial.print(buf.substring(1));
     }
 
 public:
@@ -104,7 +116,7 @@ public:
             text.concat(" Failed=");
             text.concat(this->stats->getNowSentMessagesFailed());
             text.concat(" Received=");
-            text.concat(this->stats->getNowSentMessagesReceived());
+            text.concat(this->stats->getNowMessagesReceived());
             this->ws->textAll((char *) text.c_str());
         });
     }
@@ -135,7 +147,7 @@ public:
 
     template <typename T1, typename T2, typename T3>
     void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
-        StaticJsonBuffer<200> jsonBuffer;
+        StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
         JsonObject& json = jsonBuffer.createObject();
 
         json.set("type", (int) type);
@@ -152,13 +164,7 @@ public:
             json.set(name3, value3);
         }
 
-        this->swSer->print("\n");
-        json.printTo(*this->swSer);
-        this->swSer->print("\n");
-
-        Serial.print("[com] Sending: ");
-        json.printTo(Serial);
-        Serial.println();
+        sendJson(json);
     }
 
     void setup() {
@@ -188,7 +194,7 @@ public:
         if (!Buffer::is_buffer_empty() && !this->swSer->available()) {
             Buffer::Index dataIndex = Buffer::get_index(0);
             if (dataIndex.type == utils::msgType::send_now_message) {
-                StaticJsonBuffer<300> jsonBuffer;
+                StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
                 JsonObject& root = jsonBuffer.createObject();
                 root["type"] = (int) utils::msgType::send_now_message;
                 const String string = Buffer::get_data(0);
@@ -197,13 +203,8 @@ public:
                 if (dataIndex.id) {
                     root["id"] = dataIndex.id;
                 }
-                this->swSer->println();
-                root.printTo(*this->swSer);
-                this->swSer->println();
 
-                Serial.print("[com] Sending: ");
-                root.printTo(Serial);
-                Serial.println();
+                sendJson(root);
 
                 Buffer::remove(0);
             }
@@ -211,17 +212,14 @@ public:
         }
 
 #if DEV_MODE == 2
-        if (statsChanged) {
+        if (statsChanged && millis() - lastStatsReportTime > 300) {
+            lastStatsReportTime = millis();
             statsChanged = false;
             send(
                     utils::msgType::stats,
                     0,
-                    "success",
-                    stats->getNowSentMessagesSuccessful(),
-                    "failed",
-                    stats->getNowSentMessagesFailed(),
-                    "received",
-                    stats->getNowSentMessagesReceived()
+                    "data",
+                    stats->packRemoteData()
             );
         }
 #endif
