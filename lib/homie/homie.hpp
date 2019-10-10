@@ -95,19 +95,21 @@ private:
             return;
         }
 
-        StaticJsonBuffer<2048> jsonBuffer;
-        JsonObject &fileRoot = jsonBuffer.parseObject(f);
+        StaticJsonDocument<2048> doc;
+        DeserializationError err = deserializeJson(doc, f);
 
-        if (!fileRoot.success()) {
+        if (err != DeserializationError::Ok) {
             Serial.printf("[homie] Invalid devices.json content\n");
             return;
         }
 
+        JsonObject fileRoot = doc.as<JsonObject>();
         for (auto kv : fileRoot) {
-            char * name = (char *) fileRoot.get<JsonObject>(kv.key).get<const char*>("name");
+            JsonObject device = fileRoot[kv.key()];
+            char * name = (char *) device["name"].as<char *>();
 
             char mac[6];
-            if (!utils::macStringToCharArray(kv.key, mac)) {
+            if (!utils::macStringToCharArray(kv.key().c_str(), mac)) {
                 continue;
             }
 

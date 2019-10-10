@@ -33,9 +33,9 @@ namespace utils {
         return true;
     }
 
-    void mergeJson(JsonObject& dest, JsonObject& src) {
+    void mergeJson(JsonObject dest, JsonObject src) {
         for (auto kvp : src) {
-            dest[kvp.key] = kvp.value;
+            dest[kvp.key()].set(kvp.value());
         }
     }
 }
