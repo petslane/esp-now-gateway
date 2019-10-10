@@ -61,17 +61,17 @@ private:
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
                 this->homie->send(mac, msg.c_str(), msg.length());
-                ws->textAll("Message received");
+                ws->textAll((char *) "Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
             unsigned long id = doc["id"].as<unsigned long>();
-            Serial.printf("[com] Message %i delivered\n", id);
+            Serial.printf("[com] Message %lu delivered\n", id);
             this->swSer->println("");
-            ws->textAll("Message delivered");
+            ws->textAll((char *) "Message delivered");
         } else if (type == utils::msgType::now_message_not_delivered) {
             unsigned long id = doc["id"].as<unsigned long>();
-            Serial.printf("[com] Message %i NOT delivered\n", id);
-            ws->textAll("Message not delivered");
+            Serial.printf("[com] Message %lu NOT delivered\n", id);
+            ws->textAll((char *) "Message not delivered");
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
             String data = doc["data"].as<String>();
