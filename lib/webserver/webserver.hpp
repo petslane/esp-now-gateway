@@ -252,7 +252,6 @@ public:
 
         server->on("/api", HTTP_OPTIONS, [this](AsyncWebServerRequest *request) {
             AsyncWebServerResponse *response = request->beginResponse(200);
-            response->addHeader("Access-Control-Allow-Headers","Content-Type");
             request->send(response);
         });
 
@@ -303,7 +302,6 @@ public:
         server->addHandler(handler);
 
         server->onNotFound(std::bind(&WebServer::notFound, this, std::placeholders::_1));
-        DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
         server->begin();
     }
