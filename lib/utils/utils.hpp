@@ -1,5 +1,4 @@
-#ifndef UTILS_INIT_H
-#define UTILS_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include "ArduinoJson.h"
@@ -40,4 +39,3 @@ namespace utils {
         }
     }
 }
-#endif // UTILS_INIT_H

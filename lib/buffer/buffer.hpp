@@ -1,5 +1,4 @@
-#ifndef BUFFER_INIT_H
-#define BUFFER_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <utils.hpp>
@@ -140,5 +139,3 @@ namespace Buffer {
         }
     }
 }
-
-#endif // BUFFER_INIT_H

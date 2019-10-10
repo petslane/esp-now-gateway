@@ -1,5 +1,4 @@
-#ifndef HOMIE_INIT_H
-#define HOMIE_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <Homie.h>
@@ -235,5 +234,3 @@ public:
         Serial.printf("[homie] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], msg);
     }
 };
-
-#endif // HOMIE_INIT_H

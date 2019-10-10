@@ -1,5 +1,4 @@
-#ifndef COM_INIT_H
-#define COM_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
@@ -229,5 +228,3 @@ public:
         nowMessageSendCallbackVector.push_back(cb);
     }
 };
-
-#endif // COM_INIT_H

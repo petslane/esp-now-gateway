@@ -1,5 +1,4 @@
-#ifndef WEBSOCKET_INIT_H
-#define WEBSOCKET_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
@@ -98,5 +97,3 @@ public:
     }
 
 };
-
-#endif // WEBSOCKET_INIT_H

@@ -1,5 +1,4 @@
-#ifndef WEBSERVER_INIT_H
-#define WEBSERVER_INIT_H
+#pragma once
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -304,5 +303,3 @@ public:
     }
 
 };
-
-#endif // WEBSERVER_INIT_H

@@ -1,5 +1,4 @@
-#ifndef NOW_MESSAGE_INIT_H
-#define NOW_MESSAGE_INIT_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -145,5 +144,3 @@ void NowMessage::remove() {
 
     in_buffer = false;
 }
-
-#endif

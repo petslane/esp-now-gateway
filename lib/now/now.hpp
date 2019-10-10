@@ -1,5 +1,4 @@
-#ifndef NOW_INIT_H
-#define NOW_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -254,5 +253,3 @@ public:
         });
     }
 };
-
-#endif // NOW_INIT_H

@@ -1,5 +1,4 @@
-#ifndef STATS_INIT_H
-#define STATS_INIT_H
+#pragma once
 
 #include <Base64.h>
 
@@ -178,5 +177,3 @@ public:
         return remoteData.messages_buffer_free;
     }
 };
-
-#endif // STATS_INIT_H

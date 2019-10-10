@@ -1,5 +1,4 @@
-#ifndef SCREEN_INIT_H
-#define SCREEN_INIT_H
+#pragma once
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -103,5 +102,3 @@ public:
         display.display();
     }
 };
-
-#endif // SCREEN_INIT_H
