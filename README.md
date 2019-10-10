@@ -30,7 +30,7 @@ these remote ESP-NOW devices auto-discoverable by
 ### Prerequisites
 
 - 2 WeMos D1 minis
-- [PlatformIO][PIO-install]
+- [PlatformIO][PIO-install] version 4
 - MQTT broker/server
 - OLED Shield (Optional)
 
