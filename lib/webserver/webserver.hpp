@@ -55,7 +55,7 @@ private:
             return false;
         }
 
-        StaticJsonDocument<2048> doc;
+        StaticJsonDocument<200> doc;
         DeserializationError err = deserializeJson(doc, f);
         f.close();
 
@@ -75,7 +75,7 @@ private:
         AsyncJsonResponse * response = new AsyncJsonResponse();
         JsonObject root = response->getRoot();
 
-        StaticJsonDocument<2048> doc;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
@@ -100,7 +100,7 @@ private:
         AsyncJsonResponse * response = new AsyncJsonResponse();
         JsonObject root = response->getRoot();
 
-        StaticJsonDocument<2048> doc;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
@@ -145,7 +145,7 @@ private:
         AsyncJsonResponse * response = new AsyncJsonResponse();
         JsonObject root = response->getRoot();
 
-        StaticJsonDocument<2048> doc;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
