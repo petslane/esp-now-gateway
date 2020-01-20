@@ -87,4 +87,3 @@ MQTT topic `homie/gateway/message/3505AA600194`
 - OLED shield buttons - As I have only version 1 (without buttons), then there is no button functionality. In the future
 I would like to implement some-kind of auto-pairing functionality for ESP-NOW devices, then these buttons would become
 very handy.
-- Publish WebUI source
