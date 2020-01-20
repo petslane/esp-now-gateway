@@ -1,16 +1,15 @@
-#ifndef COM_INIT_H
-#define COM_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-#include "buffer.hpp"
-#include "utils.hpp"
-#include "stats.hpp"
+#include <buffer.hpp>
+#include <utils.hpp>
+#include <stats.hpp>
 
 #if DEV_MODE == 1
 #include <homie.hpp>
-#include "websocket.hpp"
+#include <websocket.hpp>
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
 #endif // DEV_MODE == 2
@@ -38,15 +37,17 @@ private:
     void receivedSerialData(const char *data, uint8 len) {
         Serial.print("[com] Received data: ");
         Serial.println(data);
-        StaticJsonBuffer<200> jsonBuffer;
-        JsonObject& doc = jsonBuffer.parseObject(data);
+        StaticJsonDocument<200> doc;
+        DeserializationError err = deserializeJson(doc, data, len);
 
-        if (!doc.success()) {
+        if (err != DeserializationError::Ok) {
             Serial.println("[com] parseObject() failed");
             return;
         }
 
-        if (!doc.containsKey("type")) {
+        JsonObject object = doc.as<JsonObject>();
+
+        if (!object.containsKey("type")) {
             Serial.println("[com] Data container no cmd key");
             return;
         }
@@ -60,20 +61,20 @@ private:
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
                 this->homie->send(mac, msg.c_str(), msg.length());
-                ws->textAll("Message received");
+                ws->textAll((char *) "Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
-            unsigned long id =  doc.get<unsigned long>("id");
-            Serial.printf("[com] Message %i delivered\n", id);
+            unsigned long id = doc["id"].as<unsigned long>();
+            Serial.printf("[com] Message %lu delivered\n", id);
             this->swSer->println("");
-            ws->textAll("Message delivered");
+            ws->textAll((char *) "Message delivered");
         } else if (type == utils::msgType::now_message_not_delivered) {
-            unsigned long id =  doc.get<unsigned long>("id");
-            Serial.printf("[com] Message %i NOT delivered\n", id);
-            ws->textAll("Message not delivered");
+            unsigned long id = doc["id"].as<unsigned long>();
+            Serial.printf("[com] Message %lu NOT delivered\n", id);
+            ws->textAll((char *) "Message not delivered");
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
-            String data = doc.get<String>("data");
+            String data = doc["data"].as<String>();
             stats->unpackRemoteData(data);
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
@@ -90,10 +91,10 @@ private:
         }
     }
 
-    void sendJson(JsonObject & json) {
+    void sendJson(JsonDocument& doc) {
         String buf;
         buf += '\n';
-        json.printTo(buf);
+        serializeJson(doc, buf);
         buf += '\n';
 
         this->swSer->print(buf);
@@ -147,24 +148,24 @@ public:
 
     template <typename T1, typename T2, typename T3>
     void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
-        StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
-        JsonObject& json = jsonBuffer.createObject();
+        StaticJsonDocument<JSON_OBJECT_SIZE(6)> doc;
+        JsonObject json = doc.to<JsonObject>();
 
-        json.set("type", (int) type);
+        json["type"].set((int) type);
         if (id) {
-            json.set("id", id);
+            json["id"].set(id);
         }
         if (name1.length() > 0) {
-            json.set(name1, value1);
+            json[name1].set(value1);
         }
         if (name2.length() > 0) {
-            json.set(name2, value2);
+            json[name2].set(value2);
         }
         if (name3.length() > 0) {
-            json.set(name3, value3);
+            json[name3].set(value3);
         }
 
-        sendJson(json);
+        sendJson(doc);
     }
 
     void setup() {
@@ -194,8 +195,8 @@ public:
         if (!Buffer::is_buffer_empty() && !this->swSer->available()) {
             Buffer::Index dataIndex = Buffer::get_index(0);
             if (dataIndex.type == utils::msgType::send_now_message) {
-                StaticJsonBuffer<JSON_OBJECT_SIZE(6)> jsonBuffer;
-                JsonObject& root = jsonBuffer.createObject();
+                StaticJsonDocument<JSON_OBJECT_SIZE(6)> doc;
+                JsonObject root = doc.to<JsonObject>();
                 root["type"] = (int) utils::msgType::send_now_message;
                 const String string = Buffer::get_data(0);
                 root["msg"] = string;
@@ -204,7 +205,7 @@ public:
                     root["id"] = dataIndex.id;
                 }
 
-                sendJson(root);
+                sendJson(doc);
 
                 Buffer::remove(0);
             }
@@ -229,5 +230,3 @@ public:
         nowMessageSendCallbackVector.push_back(cb);
     }
 };
-
-#endif // COM_INIT_H

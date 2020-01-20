@@ -1,14 +1,13 @@
-#ifndef WEBSERVER_INIT_H
-#define WEBSERVER_INIT_H
+#pragma once
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include "AsyncJson.h"
-#include "ArduinoJson.h"
-#include "utils.hpp"
+#include <AsyncJson.h>
+#include <ArduinoJson.h>
+#include <utils.hpp>
 
 class WebServer {
 private:
@@ -56,17 +55,17 @@ private:
             return false;
         }
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject &fileRoot = jsonBuffer.parseObject(f);
+        StaticJsonDocument<200> doc;
+        DeserializationError err = deserializeJson(doc, f);
         f.close();
 
-        if (!fileRoot.success()) {
+        if (err != DeserializationError::Ok) {
             * out = "Invalid devices.json content";
             return false;
         }
 
         String tmp;
-        fileRoot.printTo(tmp);
+        serializeJson(doc, tmp);
         *out = tmp;
 
         return true;
@@ -74,9 +73,9 @@ private:
 
     void apiGetDevices(AsyncWebServerRequest *request) {
         AsyncJsonResponse * response = new AsyncJsonResponse();
-        JsonObject& root = response->getRoot();
+        JsonObject root = response->getRoot();
 
-        StaticJsonBuffer<2048> jsonBuffer;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
@@ -86,7 +85,9 @@ private:
             return;
         }
 
-        JsonObject &fileRoot = jsonBuffer.parseObject(raw);
+        deserializeJson(doc, raw);
+
+        JsonObject fileRoot = doc.as<JsonObject>();
 
         root["status"] = true;
         root.createNestedObject("data");
@@ -97,9 +98,9 @@ private:
 
     void apiDeleteDevice(AsyncWebServerRequest *request, String id) {
         AsyncJsonResponse * response = new AsyncJsonResponse();
-        JsonObject& root = response->getRoot();
+        JsonObject root = response->getRoot();
 
-        StaticJsonBuffer<2048> jsonBuffer;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
@@ -109,7 +110,9 @@ private:
             return;
         }
 
-        JsonObject &fileRoot = jsonBuffer.parseObject(raw);
+        deserializeJson(doc, raw);
+
+        JsonObject fileRoot = doc.as<JsonObject>();
 
         if (!fileRoot.containsKey(id)) {
             root["status"] = false;
@@ -122,7 +125,7 @@ private:
         fileRoot.remove(id);
 
         String out;
-        fileRoot.printTo(out);
+        serializeJson(doc, out);
         if (!writeDevicesJson(out)) {
             root["status"] = false;
             root["error"] = "Unable to write a file";
@@ -140,9 +143,9 @@ private:
 
     void apiSaveDevice(AsyncWebServerRequest *request, String id, String name, String mac) {
         AsyncJsonResponse * response = new AsyncJsonResponse();
-        JsonObject& root = response->getRoot();
+        JsonObject root = response->getRoot();
 
-        StaticJsonBuffer<2048> jsonBuffer;
+        StaticJsonDocument<200> doc;
         String raw;
         if (!readDevicesJson(& raw)) {
             root["status"] = false;
@@ -152,7 +155,9 @@ private:
             return;
         }
 
-        JsonObject &fileRoot = jsonBuffer.parseObject(raw);
+        deserializeJson(doc, raw);
+
+        JsonObject fileRoot = doc.as<JsonObject>();
 
         if (id.length()) {
             if (!fileRoot.containsKey(id)) {
@@ -191,7 +196,7 @@ private:
         fileRoot[mac]["name"] = name;
 
         String out;
-        fileRoot.printTo(out);
+        serializeJson(doc, out);
         if (!writeDevicesJson(out)) {
             root["status"] = false;
             root["error"] = "Unable to write a file";
@@ -256,13 +261,13 @@ public:
                 return;
             }
 
-            JsonObject& jsonObj = json.as<JsonObject>();
+            JsonObject jsonObj = json.as<JsonObject>();
 
             if (!apiRequireParam(jsonObj, "type", request)) {
                 return;
             }
 
-            String type = jsonObj.get<String>("type");
+            String type = jsonObj["type"].as<String>();
 
 
             std::vector<String> requiredKeys;
@@ -283,12 +288,12 @@ public:
             if (type.equals("get_devices")) {
                 return apiGetDevices(request);
             } else if (type.equals("delete_device")) {
-                String id = jsonObj.get<String>("id");
+                String id = jsonObj["id"].as<String>();
                 return apiDeleteDevice(request, id);
             } else if (type.equals("save_device")) {
-                String id = jsonObj.get<String>("id");
-                String name = jsonObj.get<String>("name");
-                String mac = jsonObj.get<String>("mac");
+                String id = jsonObj["id"].as<String>();
+                String name = jsonObj["name"].as<String>();
+                String mac = jsonObj["mac"].as<String>();
                 return apiSaveDevice(request, id, name, mac);
             }
 
@@ -304,5 +309,3 @@ public:
     }
 
 };
-
-#endif // WEBSERVER_INIT_H

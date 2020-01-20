@@ -1,8 +1,7 @@
-#ifndef UTILS_INIT_H
-#define UTILS_INIT_H
+#pragma once
 
 #include <Arduino.h>
-#include "ArduinoJson.h"
+#include <ArduinoJson.h>
 
 namespace utils {
     enum msgType: uint8 {
@@ -34,10 +33,9 @@ namespace utils {
         return true;
     }
 
-    void mergeJson(JsonObject& dest, JsonObject& src) {
+    void mergeJson(JsonObject dest, JsonObject src) {
         for (auto kvp : src) {
-            dest[kvp.key] = kvp.value;
+            dest[kvp.key()].set(kvp.value());
         }
     }
 }
-#endif // UTILS_INIT_H

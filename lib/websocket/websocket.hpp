@@ -1,11 +1,10 @@
-#ifndef WEBSOCKET_INIT_H
-#define WEBSOCKET_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include "utils.hpp"
-#include "buffer.hpp"
-#include "webserver.hpp"
+#include <utils.hpp>
+#include <buffer.hpp>
+#include <webserver.hpp>
 #include <vector>
 
 #define XSTR(s) STR(s)
@@ -50,22 +49,23 @@ public:
             strncpy(raw, incomingMessage->c_str(), (size_t) len);
             raw[len] = '\0';
 
-            StaticJsonBuffer<200> jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(raw);
+            StaticJsonDocument<200> doc;
+            DeserializationError err = deserializeJson(doc, raw);
 
-
-            if (!root.success()) {
+            if (err != DeserializationError::Ok) {
                 return;
             }
+
+            JsonObject root = doc.as<JsonObject>();
             if (!root.containsKey("type")) {
                 return;
             }
-            if (root.get<int>("type") == utils::msgType::send_now_message) {
+            if (root["type"].as<int>() == utils::msgType::send_now_message) {
                 char mac[7];
-                utils::macStringToCharArray(root.get<String>("to"), mac);
+                utils::macStringToCharArray(root["to"].as<String>(), mac);
 
-                String message = root.get<String>("message");
-                unsigned long id = root.get<unsigned long>("id");
+                String message = root["message"].as<String>();
+                unsigned long id = root["id"].as<unsigned long>();
                 Buffer::add_send_now_msg(mac, message.c_str(), message.length(), id);
             }
 
@@ -98,5 +98,3 @@ public:
     }
 
 };
-
-#endif // WEBSOCKET_INIT_H

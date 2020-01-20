@@ -1,5 +1,4 @@
-#ifndef BUFFER_INIT_H
-#define BUFFER_INIT_H
+#pragma once
 
 #include <Arduino.h>
 #include <utils.hpp>
@@ -22,12 +21,12 @@ namespace Buffer {
     static char data[BUFFER_DATA_SIZE];
 
     Index& get_index(int buffer_index) {
-        return (Index &)  data[buffer_index];
+        return (Index &) * (data + buffer_index);
     }
     Index& get_index_by_index(int index) {
         int buffer_index = 0;
         for (int i=0; i < index; i++) {
-            int new_buffer_index = buffer_index + sizeof(Index) + ((Index *) & data[buffer_index])->msgLen;
+            int new_buffer_index = buffer_index + sizeof(Index) + ((Index *) (data + buffer_index))->msgLen;
             if (new_buffer_index >= BUFFER_DATA_SIZE) {
                 break;
             }
@@ -140,5 +139,3 @@ namespace Buffer {
         }
     }
 }
-
-#endif // BUFFER_INIT_H
