@@ -106,7 +106,7 @@ private:
 public:
 #if DEV_MODE == 1
     Com(Stats * stats, GWHomie * h, WebSocket * ws) {
-        this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false, 256);
+        this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false);
         this->homie = h;
         this->ws = ws;
         this->stats = stats;
@@ -124,7 +124,7 @@ public:
 #endif
 #if DEV_MODE == 2
     Com(Stats * stats) {
-        swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false, 256);
+        swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false);
         this->stats = stats;
         this->statsChanged = false;
 
