@@ -2,6 +2,7 @@
     <div id="app">
         <div class="tabs">
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_DEVICES }" @click="showPage(C.PAGE_DEVICES)">Now devices</a>
+            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_WIFI }" @click="showPage(C.PAGE_WIFI)">WiFi</a>
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_SEND_MSG }" @click="showPage(C.PAGE_SEND_MSG)">Send NOW messages</a>
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_STATS }" @click="showPage(C.PAGE_STATS)">Stats</a>
         </div>
@@ -10,6 +11,7 @@
         <send-now-message v-show="showingPage === C.PAGE_SEND_MSG"></send-now-message>
         <log-messages v-show="showingPage === C.PAGE_SEND_MSG"></log-messages>
         <stats v-show="showingPage === C.PAGE_STATS"></stats>
+        <wifi v-show="showingPage === C.PAGE_WIFI"></wifi>
     </div>
 </template>
 
@@ -18,17 +20,20 @@
     import SendNowMessage from './components/SendNowMessage';
     import NowDevices from "./components/NowDevices";
     import Stats from "./components/Stats";
+    import WiFi from "./components/WiFi";
 
     const PAGE_DEVICES = 'devices';
     const PAGE_SEND_MSG = 'send_now_messages';
     const PAGE_STATS = 'stats';
+    const PAGE_WIFI = 'wifi';
 
     export default {
         components: {
             NowDevices,
             SendNowMessage,
             LogMessages,
-            Stats
+            Stats,
+            'wifi': WiFi,
         },
         data() {
             return {
@@ -37,6 +42,7 @@
                     PAGE_DEVICES,
                     PAGE_SEND_MSG,
                     PAGE_STATS,
+                    PAGE_WIFI,
                 },
             };
         },

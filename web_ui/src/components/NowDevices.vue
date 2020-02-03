@@ -9,10 +9,10 @@
             <div v-for="(device, mac, index) in getNowDevices" class="content" :class="{ odd: !index%2, even: index%2 }">
                 <span class="mac" v-html="mac"></span>
                 <span class="spacer"></span>
-                <span class="name">{{ device.name }}</span>
+                <span class="name">{{ device }}</span>
                 <span class="spacer"></span>
-                <ui-button small @click="editDevice(mac, device.name)">&#9998;</ui-button>
-                <ui-button small @click="deleteDevice(mac, device.name)" color="red">&times;</ui-button>
+                <ui-button small @click="editDevice(mac, device)">&#9998;</ui-button>
+                <ui-button small @click="deleteDevice(mac, device)" color="red">&times;</ui-button>
             </div>
         </div>
         <modal :title="modalTitle" :show="modalShow" @close="modalClose()">
