@@ -1,13 +1,15 @@
 <template>
-    <div class="modal-container" :class="{ show }">
-        <div class="modal">
+    <transition name="slide-fade" :duration="500">
+    <div class="modal-container" v-if="show">
+        <div class="modal" :style="{ backgroundColor: backgroundColor }">
             <h2>{{ title }}</h2>
-            <a class="close" @click="close()" href="javascript: void(1);">&times;</a>
+            <a v-if="closable" class="close" @click="close()" href="javascript: void(1);">&times;</a>
             <div class="content"><slot></slot></div>
             <div v-if="$slots.footer" style="padding-top: 20px"></div>
             <div><slot name="footer"></slot></div>
         </div>
     </div>
+    </transition>
 </template>
 
 <script>
@@ -26,8 +28,13 @@
                 required: true,
                 default: false,
             },
-        },
-        computed: {
+            closable: {
+                required: false,
+                default: true,
+            },
+            backgroundColor: {
+                required: false,
+            },
         },
         methods: {
             close() {
@@ -45,13 +52,20 @@
         left: 0;
         right: 0;
         background: rgba(0, 0, 0, 0.7);
-        transition: opacity 500ms;
-        visibility: hidden;
-        opacity: 0;
         z-index: 100;
-        &.show {
-            visibility: visible;
-            opacity: 1;
+        &.slide-fade-enter-active,
+        &.slide-fade-leave-active {
+            transition: opacity .3s ease;
+            .modal {
+                transition: opacity .5s ease, transform .3s ease;
+            }
+        }
+        &.slide-fade-enter, &.slide-fade-leave-to {
+            opacity: 0;
+            .modal {
+                transform: translateY(-150px);
+                opacity: 0;
+            }
         }
         .modal {
             margin: 70px auto;
@@ -60,7 +74,7 @@
             border-radius: 5px;
             width: 70%;
             position: relative;
-            transition: all 5s ease-in-out;
+            transition: all 1s ease-in-out, background-color 200ms ease-in-out, opacity 0.2s ease-in-out;
 
             h2 {
                 margin-top: 0;
