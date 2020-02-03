@@ -32,6 +32,10 @@
                     classes.push('small');
                 }
 
+                if (this.disabled !== false) {
+                    classes.push('disabled');
+                }
+
                 return classes;
             }
         },
@@ -100,6 +104,9 @@
         -o-transform: translate(-50%, -50%);
         transform: translate(-50%, -50%);
     }
+    .btn:disabled:before {
+        background-color: transparent;
+    }
 
     .btn:active:before {
         width: 120%;
@@ -116,7 +123,8 @@
                 background-color: darken($bgcolor, 9%);
             }
             &:disabled {
-                color: mix($color, $bgcolor);
+                color: mix($color, #777);
+                opacity: 0.7;
                 background-color: $bgcolor;
             }
         }
