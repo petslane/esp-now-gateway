@@ -3,6 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <stats.hpp>
+#include <mqtt.hpp>
 
 #define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
@@ -25,12 +26,14 @@ private:
     unsigned long lastUpdate;
     uint8 loader;
     Stats * stats;
+    MQTT * mqtt;
 public:
-    Screen(Stats * stats) {
+    Screen(Stats * stats, MQTT * mqtt) {
         lastUpdate = 0;
         loader = 0;
 
         this->stats = stats;
+        this->mqtt = mqtt;
     }
     void setup() {
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -79,7 +82,7 @@ public:
         }
 
         // MQTT
-        if (Homie.getMqttClient().connected()) {
+        if (mqtt->isConnected()) {
             display.println("MQTT OK");
         } else if (status == STATION_GOT_IP) {
             display.print("MQTT ");

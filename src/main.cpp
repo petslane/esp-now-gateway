@@ -6,20 +6,23 @@
 Stats * stats = new Stats();
 
 #if DEV_MODE == 1
-#include <homie.hpp>
 #include <webserver.hpp>
 #include <websocket.hpp>
+#include <config.hpp>
+#include <mqtt.hpp>
+#include <wifi.hpp>
 
 #ifdef ENABLE_OLED_SHIELD
 #include <screen.hpp>
 #endif
 
-WebServer * webserver = new WebServer();
-WebSocket * ws = new WebSocket(webserver);
-GWHomie * homie = new GWHomie();
-Com * comm = new Com(stats, homie, ws);
+MQTT * mqtt = new MQTT();
+WIFI * wifi = new WIFI();
+WebServer * webserver = new WebServer(wifi);
+WebSocket * ws = new WebSocket(webserver, stats);
+Com * comm = new Com(stats, ws, mqtt);
 #ifdef ENABLE_OLED_SHIELD
-Screen * screen = new Screen(stats);
+Screen * screen = new Screen(stats, mqtt);
 #endif
 
 #elif DEV_MODE == 2
@@ -34,7 +37,9 @@ void setup() {
     Buffer::setup();
     comm->setup();
 #if DEV_MODE == 1
-    homie->setup();
+    Config::load();
+    mqtt->setup();
+    wifi->setup();
     webserver->setup();
     ws->setup();
 #ifdef ENABLE_OLED_SHIELD
@@ -51,8 +56,9 @@ void loop() {
     comm->loop();
     stats->loop();
 #if DEV_MODE == 1
-    homie->loop();
     ws->loop();
+    wifi->loop();
+    mqtt->loop();
 #ifdef ENABLE_OLED_SHIELD
     screen->loop();
 #endif

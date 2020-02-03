@@ -6,6 +6,8 @@
 #include <buffer.hpp>
 #include <webserver.hpp>
 #include <vector>
+#include <stats.hpp>
+#include <ArduinoJson.h>
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -16,6 +18,10 @@ class WebSocket {
 private:
     AsyncWebSocket * ws;
     WebServer * webserver;
+    Stats * stats;
+
+    bool statsChanged = false;
+    long lastStatsReportTime = 0;
 
     std::vector<String*> ptrIncomingMessages;
 
@@ -31,13 +37,39 @@ private:
                 String * incomingData = new String(dataWithNull);
                 ptrIncomingMessages.push_back(incomingData);
             }
+        } else if (type == AwsEventType::WS_EVT_CONNECT) {
+            statsChanged = true;
         }
     }
 
+    void publishStats() {
+        StaticJsonDocument<200> doc;
+        doc["type"] = "stats";
+        doc["buffer1_free"] = stats->getIncomingBufferFree();
+        doc["buffer1_size"] = stats->getIncomingBufferSize();
+        doc["buffer2_free"] = stats->getMessageBufferFree();
+        doc["buffer2_size"] = stats->getMessageBufferSize();
+        doc["missed_incoming_messages"] = stats->getMissedIncomingNowMessages();
+        doc["msgs_failed_sent"] = stats->getNowSentMessagesFailed();
+        doc["msgs_received"] = stats->getNowMessagesReceived();
+        doc["msgs_success_sent"] = stats->getNowSentMessagesSuccessful();
+
+        String msg;
+        serializeJson(doc, msg);
+
+        textAll(msg.c_str());
+    }
+
 public:
-    WebSocket(WebServer * webserver) {
+    WebSocket(WebServer * webserver, Stats * stats) {
         this->ws = new AsyncWebSocket("/ws");
         this->webserver = webserver;
+        this->stats = stats;
+
+        this->statsChanged = false;
+        stats->addChangeCallback([this](){
+            this->statsChanged = true;
+        });
     }
     void loop() {
         if (ptrIncomingMessages.size() > 0) {
@@ -71,6 +103,13 @@ public:
 
             delete incomingMessage;
         }
+
+        if (statsChanged && millis() - lastStatsReportTime > 300) {
+            lastStatsReportTime = millis();
+            statsChanged = false;
+
+            publishStats();
+        }
     }
 
     void setup() {
@@ -93,7 +132,7 @@ public:
         webserver->addHandler(ws);
     }
 
-    void textAll(char * msg) {
+    void textAll(const char * msg) {
         ws->textAll(msg);
     }
 

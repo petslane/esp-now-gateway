@@ -8,7 +8,7 @@
 #include <stats.hpp>
 
 #if DEV_MODE == 1
-#include <homie.hpp>
+#include <mqtt.hpp>
 #include <websocket.hpp>
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
@@ -27,7 +27,7 @@ private:
     long lastStatsReportTime = 0;
     bool statsChanged;
 #if DEV_MODE == 1
-    GWHomie * homie;
+    MQTT * mqtt;
     WebSocket * ws;
 #endif
     uint8 bufferPosition = 0;
@@ -60,7 +60,7 @@ private:
             String from = doc["from"].as<String>();
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
-                this->homie->send(mac, msg.c_str(), msg.length());
+                this->mqtt->send(mac, msg.c_str(), msg.length());
                 ws->textAll((char *) "Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
@@ -105,21 +105,12 @@ private:
 
 public:
 #if DEV_MODE == 1
-    Com(Stats * stats, GWHomie * h, WebSocket * ws) {
+    Com(Stats * stats, WebSocket * ws, MQTT * mqtt) {
         this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false);
-        this->homie = h;
+        this->mqtt = mqtt;
         this->ws = ws;
         this->stats = stats;
         this->statsChanged = false;
-        stats->addChangeCallback([this](){
-            String text = "Messages stats: Successfully sent=";
-            text.concat(this->stats->getNowSentMessagesSuccessful());
-            text.concat(" Failed=");
-            text.concat(this->stats->getNowSentMessagesFailed());
-            text.concat(" Received=");
-            text.concat(this->stats->getNowMessagesReceived());
-            this->ws->textAll((char *) text.c_str());
-        });
     }
 #endif
 #if DEV_MODE == 2
@@ -148,7 +139,8 @@ public:
 
     template <typename T1, typename T2, typename T3>
     void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
-        StaticJsonDocument<JSON_OBJECT_SIZE(6)> doc;
+        DynamicJsonDocument doc(JSON_OBJECT_SIZE(6) + 6 + name1.length() + value1.length() + name2.length() +
+                                value2.length() + name3.length() + value3.length());
         JsonObject json = doc.to<JsonObject>();
 
         json["type"].set((int) type);
