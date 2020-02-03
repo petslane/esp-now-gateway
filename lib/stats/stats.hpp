@@ -3,7 +3,7 @@
 #include <Base64.h>
 
 class Stats {
-private:
+  private:
     struct {
         int volatile now_sent_messages_successful;
         int volatile now_sent_messages_failed;
@@ -22,7 +22,8 @@ private:
 
     typedef std::function<void(void)> onStatsChangeCallback;
     std::vector<onStatsChangeCallback> onStatsChangeCallbackVector;
-public:
+
+  public:
     Stats() {
         remoteData.now_sent_messages_successful = 0;
         remoteData.now_sent_messages_failed = 0;
@@ -42,9 +43,9 @@ public:
         if (stats_updated) {
             stats_updated = false;
 
-            std::for_each(onStatsChangeCallbackVector.begin(), onStatsChangeCallbackVector.end(), [](onStatsChangeCallback cb) {
-                cb();
-            });
+            std::for_each(onStatsChangeCallbackVector.begin(),
+                          onStatsChangeCallbackVector.end(),
+                          [](onStatsChangeCallback cb) { cb(); });
         }
     }
 
@@ -61,10 +62,10 @@ public:
     void unpackRemoteData(String base64Str) {
         int base64StrLen = base64Str.length();
 
-        int decodedLen = Base64.decodedLength((char *) base64Str.c_str(), base64StrLen);
+        int decodedLen = Base64.decodedLength((char *)base64Str.c_str(), base64StrLen);
 
         char decodedString[decodedLen];
-        Base64.decode(decodedString, (char *) base64Str.c_str(), base64StrLen);
+        Base64.decode(decodedString, (char *)base64Str.c_str(), base64StrLen);
 
         memcpy(&remoteData, decodedString, sizeof(remoteData));
 

@@ -25,7 +25,7 @@ class WebServer {
 #ifndef AUTH_USERNAME
         return true;
 #endif
-        if (!request->authenticate((const char *) XSTR(AUTH_USERNAME), (const char *) XSTR(AUTH_PASSWORD))) {
+        if (!request->authenticate((const char *)XSTR(AUTH_USERNAME), (const char *)XSTR(AUTH_PASSWORD))) {
             Serial.println("[web] Invalid username/password");
             request->requestAuthentication();
             return false;
@@ -36,7 +36,7 @@ class WebServer {
 
     bool readDevicesJson(String *out) {
         SPIFFS.begin();
-        
+
         if (!SPIFFS.exists("/config.json")) {
             *out = "config.json file missing";
             SPIFFS.end();
@@ -45,7 +45,7 @@ class WebServer {
 
         File f = SPIFFS.open("/config.json", "r");
         if (!f) {
-            * out = "unable to open devices.json file";
+            *out = "unable to open config.json file";
             SPIFFS.end();
             return false;
         }
@@ -56,7 +56,7 @@ class WebServer {
         SPIFFS.end();
 
         if (err != DeserializationError::Ok) {
-            * out = "Invalid devices.json content";
+            *out = "Invalid config.json content";
             return false;
         }
 
@@ -72,16 +72,14 @@ class WebServer {
         return true;
     }
 
-    void apiWifiConnect(AsyncWebServerRequest *request,
-                        AsyncJsonResponse *response, JsonObject root,
-                        String ssid, String pass) {
+    void apiWifiConnect(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String ssid,
+                        String pass) {
         root["status"] = true;
 
         wifi->testWifiConnection(ssid, pass);
     }
 
-    void apiGetWifiSettings(AsyncWebServerRequest *request,
-                            AsyncJsonResponse *response, JsonObject root) {
+    void apiGetWifiSettings(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
         root["status"] = true;
         root["current"] = WiFi.SSID();
         station_status_t status = wifi_station_get_connect_status();
@@ -98,35 +96,33 @@ class WebServer {
         root["ap_name"] = config.ap.name;
     }
 
-    void apiSaveApName(AsyncWebServerRequest *request,
-                       AsyncJsonResponse *response, JsonObject root,
-                       String name) {
+    void apiSaveApName(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String name) {
         config.ap.name = name;
         Config::saveConfig();
 
         apiGetWifiSettings(request, response, root);
     }
 
-    void apiScanWifiNetworks(AsyncWebServerRequest *request,
-                             AsyncJsonResponse *response, JsonObject root) {
+    void apiScanWifiNetworks(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
         WiFi.scanDelete();
         WiFi.scanNetworks(true);
 
         root["status"] = true;
     }
 
-    void apiGetWifiNetworks(AsyncWebServerRequest *request,
-                            AsyncJsonResponse *response, JsonObject root) {
+    void apiGetWifiNetworks(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
         JsonArray data = root.createNestedArray("data");
         StaticJsonDocument<200> doc;
 
         int n = WiFi.scanComplete();
         if (n >= 0) {
             for (int i = 0; i < n; i++) {
-                Serial.printf(
-                    "%d: %s, Ch:%d (%ddBm) %s\n", i + 1, WiFi.SSID(i).c_str(),
-                    WiFi.channel(i), WiFi.RSSI(i),
-                    WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
+                Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n",
+                              i + 1,
+                              WiFi.SSID(i).c_str(),
+                              WiFi.channel(i),
+                              WiFi.RSSI(i),
+                              WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
 
                 JsonArray network = doc.to<JsonArray>();
                 network.add(WiFi.SSID(i));
@@ -154,8 +150,7 @@ class WebServer {
         root["status"] = true;
     }
 
-    void apiGetDevices(AsyncWebServerRequest *request,
-                       AsyncJsonResponse *response, JsonObject root) {
+    void apiGetDevices(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
         StaticJsonDocument<200> doc;
         String raw;
 
@@ -175,9 +170,7 @@ class WebServer {
         utils::mergeJson(root["data"], fileRoot);
     }
 
-    void apiDeleteDevice(AsyncWebServerRequest *request,
-                         AsyncJsonResponse *response, JsonObject root,
-                         String id) {
+    void apiDeleteDevice(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String id) {
         String error = Config::saveDevice(id, "");
 
         root["status"] = false;
@@ -189,8 +182,7 @@ class WebServer {
         apiGetDevices(request, response, root);
     }
 
-    void apiSaveDevice(AsyncWebServerRequest *request,
-                       AsyncJsonResponse *response, JsonObject root, String id,
+    void apiSaveDevice(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String id,
                        String name, String mac) {
 
         String error = Config::saveDevice(mac, name);
@@ -204,8 +196,7 @@ class WebServer {
         apiGetDevices(request, response, root);
     }
 
-    bool apiRequireParam(JsonObject &jsonObj, String param,
-                         AsyncWebServerRequest *request) {
+    bool apiRequireParam(JsonObject &jsonObj, String param, AsyncWebServerRequest *request) {
         if (!jsonObj.containsKey(param)) {
             request->send(400, "text/plain", "Missing parameter " + param);
             return false;
@@ -220,12 +211,11 @@ class WebServer {
         this->wifi = wifi;
     }
 
-    void addHandler(AsyncWebHandler* handler) {
+    void addHandler(AsyncWebHandler *handler) {
         this->server->addHandler(handler);
     }
 
-    void setCORSHeaders(AsyncWebServerRequest *request,
-                        AsyncWebServerResponse *response) {
+    void setCORSHeaders(AsyncWebServerRequest *request, AsyncWebServerResponse *response) {
         response->addHeader("Access-Control-Allow-Headers", "Content-Type");
         AsyncWebHeader *origin = request->getHeader("Origin");
         response->addHeader("Access-Control-Allow-Origin", origin->value());
@@ -233,8 +223,7 @@ class WebServer {
     }
 
     void setup() {
-        server->addHandler(new CaptiveRequestHandler())
-            .setFilter(ON_AP_FILTER); // only when requested from AP
+        server->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
 
         server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
             if (!authenticateRequest(request)) {
@@ -242,10 +231,10 @@ class WebServer {
             }
 
             SPIFFS.begin();
-            AsyncWebServerResponse *response = request->beginResponse(
-                SPIFFS, "/www/index.html.gz", "text/html");
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/index.html.gz", "text/html");
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
+            // SPIFFS.end();
         });
         server->on("/app.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
             if (!authenticateRequest(request)) {
@@ -253,31 +242,27 @@ class WebServer {
             }
 
             SPIFFS.begin();
-            AsyncWebServerResponse *response = request->beginResponse(
-                SPIFFS, "/www/app.js.gz", "application/javascript");
+            AsyncWebServerResponse *response =
+                request->beginResponse(SPIFFS, "/www/app.js.gz", "application/javascript");
             response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+            // SPIFFS.end();
+        });
+
+        server->on("/api", HTTP_OPTIONS, [this](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(200);
+
+            setCORSHeaders(request, response);
+
             request->send(response);
         });
 
-        server->on(
-            "/api", HTTP_OPTIONS, [this](AsyncWebServerRequest *request) {
-                AsyncWebServerResponse *response = request->beginResponse(200);
+        server->on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *request) { request->redirect("/"); });
 
-                setCORSHeaders(request, response);
+        server->on("/fwlink", HTTP_GET, [](AsyncWebServerRequest *request) { request->redirect("/"); });
 
-                request->send(response);
-            });
-
-        server->on(
-            "/generate_204", HTTP_GET,
-            [](AsyncWebServerRequest *request) { request->redirect("/"); });
-
-        server->on("/fwlink", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->redirect("/");
-        });
-
-        AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler(
-            "/api", [this](AsyncWebServerRequest *request, JsonVariant &json) {
+        AsyncCallbackJsonWebHandler *handler =
+            new AsyncCallbackJsonWebHandler("/api", [this](AsyncWebServerRequest *request, JsonVariant &json) {
                 if (!authenticateRequest(request)) {
                     return;
                 }
@@ -304,8 +289,7 @@ class WebServer {
                 } else if (type.equals("save_ap_name")) {
                     requiredKeys.emplace_back("name");
                 }
-                for (std::vector<String>::iterator it = requiredKeys.begin();
-                     it != requiredKeys.end(); ++it) {
+                for (std::vector<String>::iterator it = requiredKeys.begin(); it != requiredKeys.end(); ++it) {
                     if (!apiRequireParam(jsonObj, *it, request)) {
                         return;
                     }
@@ -353,5 +337,4 @@ class WebServer {
 
         server->begin();
     }
-
 };

@@ -50,9 +50,7 @@ class WIFI {
 
     void onWifiConnect(const WiFiEventStationModeGotIP &event) {
         Serial.println("[wifi] wifi connected");
-        std::for_each(onConnectCallbackVector.begin(),
-                      onConnectCallbackVector.end(),
-                      [](onCallback cb) { cb(); });
+        std::for_each(onConnectCallbackVector.begin(), onConnectCallbackVector.end(), [](onCallback cb) { cb(); });
 
         if (!testSSID.isEmpty()) {
             Serial.println("[wifi] new WiFi connection success, saving new WiFi settings");
@@ -73,9 +71,8 @@ class WIFI {
 
     void onWifiDisconnect(const WiFiEventStationModeDisconnected &event) {
         Serial.println("[wifi] wifi disconnected");
-        std::for_each(onDisconnectCallbackVector.begin(),
-                      onDisconnectCallbackVector.end(),
-                      [](onCallback cb) { cb(); });
+        std::for_each(
+            onDisconnectCallbackVector.begin(), onDisconnectCallbackVector.end(), [](onCallback cb) { cb(); });
 
         if (!testStarting) { // skip reconnect if new connection test is started
             wifiReconnectTimer.once(5, std::bind(&WIFI::connectToWifi, this));
@@ -106,10 +103,9 @@ class WIFI {
 
   public:
     WIFI() {
-        wifiConnectHandler = WiFi.onStationModeGotIP(
-            std::bind(&WIFI::onWifiConnect, this, std::placeholders::_1));
-        wifiDisconnectHandler = WiFi.onStationModeDisconnected(
-            std::bind(&WIFI::onWifiDisconnect, this, std::placeholders::_1));
+        wifiConnectHandler = WiFi.onStationModeGotIP(std::bind(&WIFI::onWifiConnect, this, std::placeholders::_1));
+        wifiDisconnectHandler =
+            WiFi.onStationModeDisconnected(std::bind(&WIFI::onWifiDisconnect, this, std::placeholders::_1));
 
         testSSID = "";
         testPass = "";
@@ -141,8 +137,7 @@ class WIFI {
         if (runningMDNS) {
             MDNS.update();
         }
-        if (runningAP && WiFi.isConnected() &&
-            WiFi.softAPgetStationNum() == 0) {
+        if (runningAP && WiFi.isConnected() && WiFi.softAPgetStationNum() == 0) {
             Serial.println("[wifi] AP stopped");
             WiFi.mode(WIFI_STA);
             WiFi.softAPdisconnect(true);

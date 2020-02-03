@@ -2,9 +2,9 @@
 
 #include <Arduino.h>
 #include <AsyncMqttClient.h>
+#include <ESP8266WiFi.h>
 #include <Ticker.h>
 #include <config.hpp>
-#include <ESP8266WiFi.h>
 
 class MQTT {
   private:
@@ -15,7 +15,7 @@ class MQTT {
 
     struct OutgoingMqttMessage {
         char mac[6];
-        String * message;
+        String *message;
     };
     std::vector<OutgoingMqttMessage> outgoingMqttMessages;
 
@@ -29,7 +29,9 @@ class MQTT {
                                      // reconnecting to Wi-Fi
     }
 
-    void connectToMqtt() { mqttClient.connect(); }
+    void connectToMqtt() {
+        mqttClient.connect();
+    }
 
     void onMqttConnect(bool sessionPresent) {
         Serial.println("MQTT: connected");
@@ -49,8 +51,7 @@ class MQTT {
         }
     }
 
-    void onMqttMessage(char *topic, char *payload,
-                       AsyncMqttClientMessageProperties properties, size_t len,
+    void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len,
                        size_t index, size_t total) {
         Serial.println("Publish received.");
         Serial.print("  topic: ");
@@ -87,13 +88,13 @@ class MQTT {
         }
         char mac2[6];
         for (uint8 i = 0; i < 6; i++) {
-            mac2[i] = (char) mac[i];
+            mac2[i] = (char)mac[i];
         }
 
         Buffer::add_send_now_msg(mac2, message.c_str(), message.length(), 0);
     }
 
-    bool macStringToCharArray(const char * from, char * to) {
+    bool macStringToCharArray(const char *from, char *to) {
         int mac[6];
         int i = sscanf(from, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
         if (i != 6) {
@@ -101,7 +102,7 @@ class MQTT {
         }
 
         for (uint8 i = 0; i < 6; i++) {
-            to[i] = (char) mac[i];
+            to[i] = (char)mac[i];
         }
 
         return true;
@@ -109,19 +110,20 @@ class MQTT {
 
   public:
     MQTT() {
-        wifiConnectHandler = WiFi.onStationModeGotIP(
-            std::bind(&MQTT::onWifiConnect, this, std::placeholders::_1));
-        wifiDisconnectHandler = WiFi.onStationModeDisconnected(
-            std::bind(&MQTT::onWifiDisconnect, this, std::placeholders::_1));
+        wifiConnectHandler = WiFi.onStationModeGotIP(std::bind(&MQTT::onWifiConnect, this, std::placeholders::_1));
+        wifiDisconnectHandler =
+            WiFi.onStationModeDisconnected(std::bind(&MQTT::onWifiDisconnect, this, std::placeholders::_1));
 
-        mqttClient.onConnect(
-            std::bind(&MQTT::onMqttConnect, this, std::placeholders::_1));
-        mqttClient.onDisconnect(
-            std::bind(&MQTT::onMqttDisconnect, this, std::placeholders::_1));
-        mqttClient.onMessage(std::bind(
-            &MQTT::onMqttMessage, this, std::placeholders::_1,
-            std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-            std::placeholders::_5, std::placeholders::_6));
+        mqttClient.onConnect(std::bind(&MQTT::onMqttConnect, this, std::placeholders::_1));
+        mqttClient.onDisconnect(std::bind(&MQTT::onMqttDisconnect, this, std::placeholders::_1));
+        mqttClient.onMessage(std::bind(&MQTT::onMqttMessage,
+                                       this,
+                                       std::placeholders::_1,
+                                       std::placeholders::_2,
+                                       std::placeholders::_3,
+                                       std::placeholders::_4,
+                                       std::placeholders::_5,
+                                       std::placeholders::_6));
     }
 
     void setup() {
@@ -169,7 +171,14 @@ class MQTT {
 
         outgoingMqttMessages.push_back(o);
 
-        Serial.printf("[mqtt] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], msg);
+        Serial.printf("[mqtt] Queued message from %02X:%02X:%02X:%02X:%02X:%02X: %s\n",
+                      mac[0],
+                      mac[1],
+                      mac[2],
+                      mac[3],
+                      mac[4],
+                      mac[5],
+                      msg);
     }
 
     bool isConnected() {

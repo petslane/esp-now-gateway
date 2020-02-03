@@ -3,33 +3,33 @@
 #include <buffer.hpp>
 #include <com.hpp>
 #include <stats.hpp>
-Stats * stats = new Stats();
+Stats *stats = new Stats();
 
 #if DEV_MODE == 1
-#include <webserver.hpp>
-#include <websocket.hpp>
 #include <config.hpp>
 #include <mqtt.hpp>
+#include <webserver.hpp>
+#include <websocket.hpp>
 #include <wifi.hpp>
 
 #ifdef ENABLE_OLED_SHIELD
 #include <screen.hpp>
 #endif
 
-MQTT * mqtt = new MQTT();
-WIFI * wifi = new WIFI();
-WebServer * webserver = new WebServer(wifi);
-WebSocket * ws = new WebSocket(webserver, stats);
-Com * comm = new Com(stats, ws, mqtt);
+MQTT *mqtt = new MQTT();
+WIFI *wifi = new WIFI();
+WebServer *webserver = new WebServer(wifi);
+WebSocket *ws = new WebSocket(webserver, stats);
+Com *comm = new Com(stats, ws, mqtt);
 #ifdef ENABLE_OLED_SHIELD
-Screen * screen = new Screen(stats, mqtt);
+Screen *screen = new Screen(stats, mqtt);
 #endif
 
 #elif DEV_MODE == 2
 #include <now.hpp>
 
-Com * comm = new Com(stats);
-Now * now = new Now(comm, stats);
+Com *comm = new Com(stats);
+Now *now = new Now(comm, stats);
 #endif
 
 void setup() {
@@ -50,7 +50,6 @@ void setup() {
 #endif
     Serial.println("Setup");
 }
-
 
 void loop() {
     comm->loop();

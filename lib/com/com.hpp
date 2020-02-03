@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include <ArduinoJson.h>
+#include <SoftwareSerial.h>
 #include <buffer.hpp>
-#include <utils.hpp>
 #include <stats.hpp>
+#include <utils.hpp>
 
 #if DEV_MODE == 1
 #include <mqtt.hpp>
@@ -21,14 +21,14 @@ typedef std::function<bool(String, const char *, uint8, unsigned long)> onNowMes
 typedef std::vector<onNowMessageSendCallback> onNowMessageSendCallbackVector;
 
 class Com {
-private:
-    SoftwareSerial * swSer;
-    Stats * stats;
+  private:
+    SoftwareSerial *swSer;
+    Stats *stats;
     long lastStatsReportTime = 0;
     bool statsChanged;
 #if DEV_MODE == 1
-    MQTT * mqtt;
-    WebSocket * ws;
+    MQTT *mqtt;
+    WebSocket *ws;
 #endif
     uint8 bufferPosition = 0;
     char buffer[512];
@@ -61,37 +61,37 @@ private:
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
                 this->mqtt->send(mac, msg.c_str(), msg.length());
-                ws->textAll((char *) "Message received");
+                ws->textAll((char *)"Message received");
             }
         } else if (type == utils::msgType::now_message_delivered) {
             unsigned long id = doc["id"].as<unsigned long>();
             Serial.printf("[com] Message %lu delivered\n", id);
             this->swSer->println("");
-            ws->textAll((char *) "Message delivered");
+            ws->textAll((char *)"Message delivered");
         } else if (type == utils::msgType::now_message_not_delivered) {
             unsigned long id = doc["id"].as<unsigned long>();
             Serial.printf("[com] Message %lu NOT delivered\n", id);
-            ws->textAll((char *) "Message not delivered");
+            ws->textAll((char *)"Message not delivered");
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
             String data = doc["data"].as<String>();
             stats->unpackRemoteData(data);
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
-        } else if (type == (uint8) utils::msgType::send_now_message) {
+        } else if (type == (uint8)utils::msgType::send_now_message) {
             Serial.println("[com] Sending NOW message");
             String msg = doc["msg"].as<String>();
             String to = doc["to"].as<String>();
             unsigned long id = doc["id"].as<unsigned long>();
 
-            std::for_each(nowMessageSendCallbackVector.begin(), nowMessageSendCallbackVector.end(), [&](onNowMessageSendCallback cb) {
-                cb(to, msg.c_str(), (uint8) msg.length(), id);
-            });
+            std::for_each(nowMessageSendCallbackVector.begin(),
+                          nowMessageSendCallbackVector.end(),
+                          [&](onNowMessageSendCallback cb) { cb(to, msg.c_str(), (uint8)msg.length(), id); });
 #endif // DEV_MODE == 2
         }
     }
 
-    void sendJson(JsonDocument& doc) {
+    void sendJson(JsonDocument &doc) {
         String buf;
         buf += '\n';
         serializeJson(doc, buf);
@@ -103,9 +103,9 @@ private:
         Serial.print(buf.substring(1));
     }
 
-public:
+  public:
 #if DEV_MODE == 1
-    Com(Stats * stats, WebSocket * ws, MQTT * mqtt) {
+    Com(Stats *stats, WebSocket *ws, MQTT *mqtt) {
         this->swSer = new SoftwareSerial(SERIAL_PIN_1, SERIAL_PIN_2, false);
         this->mqtt = mqtt;
         this->ws = ws;
@@ -114,19 +114,16 @@ public:
     }
 #endif
 #if DEV_MODE == 2
-    Com(Stats * stats) {
+    Com(Stats *stats) {
         swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false);
         this->stats = stats;
         this->statsChanged = false;
 
-        stats->addChangeCallback([this](){
-            this->statsChanged = true;
-        });
+        stats->addChangeCallback([this]() { this->statsChanged = true; });
     }
 #endif
 
-    template <typename T1>
-    void send(utils::msgType type, unsigned long id, String name1, T1 value1) {
+    template <typename T1> void send(utils::msgType type, unsigned long id, String name1, T1 value1) {
         String s;
         send(type, id, name1, value1, s, s);
     }
@@ -138,12 +135,13 @@ public:
     }
 
     template <typename T1, typename T2, typename T3>
-    void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3, T3 value3) {
+    void send(utils::msgType type, unsigned long id, String name1, T1 value1, String name2, T2 value2, String name3,
+              T3 value3) {
         DynamicJsonDocument doc(JSON_OBJECT_SIZE(6) + 6 + name1.length() + value1.length() + name2.length() +
                                 value2.length() + name3.length() + value3.length());
         JsonObject json = doc.to<JsonObject>();
 
-        json["type"].set((int) type);
+        json["type"].set((int)type);
         if (id) {
             json["id"].set(id);
         }
@@ -168,7 +166,7 @@ public:
     void loop() {
         bool hasFullData = false;
         while (this->swSer->available() > 0) {
-            char c = (char) this->swSer->read();
+            char c = (char)this->swSer->read();
             if (c == '\n') {
                 if (!bufferPosition) {
                     continue;
@@ -177,7 +175,7 @@ public:
                 break;
             }
             buffer[bufferPosition] = c;
-            bufferPosition = (uint8) (bufferPosition + 1) % 512;
+            bufferPosition = (uint8)(bufferPosition + 1) % 512;
         }
         if (hasFullData) {
             receivedSerialData(buffer, bufferPosition);
@@ -189,7 +187,7 @@ public:
             if (dataIndex.type == utils::msgType::send_now_message) {
                 StaticJsonDocument<JSON_OBJECT_SIZE(6)> doc;
                 JsonObject root = doc.to<JsonObject>();
-                root["type"] = (int) utils::msgType::send_now_message;
+                root["type"] = (int)utils::msgType::send_now_message;
                 const String string = Buffer::get_data(0);
                 root["msg"] = string;
                 root["to"] = utils::macCharArrayToString(dataIndex.attr.send_now_message.mac);
@@ -201,19 +199,13 @@ public:
 
                 Buffer::remove(0);
             }
-
         }
 
 #if DEV_MODE == 2
         if (statsChanged && millis() - lastStatsReportTime > 300) {
             lastStatsReportTime = millis();
             statsChanged = false;
-            send(
-                    utils::msgType::stats,
-                    0,
-                    "data",
-                    stats->packRemoteData()
-            );
+            send(utils::msgType::stats, 0, "data", stats->packRemoteData());
         }
 #endif
     }

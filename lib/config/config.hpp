@@ -25,14 +25,13 @@ ConfigStruct config;
 
 class Config {
   private:
-
     static void error(String message) {
         Serial.println(message);
         delay(1000);
         ESP.reset();
     }
 
-    static String setJson(JsonDocument * doc) {
+    static String setJson(JsonDocument *doc) {
         SPIFFS.begin();
         String filename = "/config.json";
 
@@ -49,7 +48,7 @@ class Config {
         return "";
     }
 
-    static String getJson(JsonDocument * doc) {
+    static String getJson(JsonDocument *doc) {
         SPIFFS.begin();
         String filename = "/config.json";
 
@@ -63,7 +62,7 @@ class Config {
             SPIFFS.end();
             return "unable to open config.json file";
         }
-        
+
         Serial.println("config.json content:");
         deserializeJson(*doc, Serial);
         Serial.println();

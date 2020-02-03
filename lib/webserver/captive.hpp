@@ -5,8 +5,11 @@
 
 class CaptiveRequestHandler : public AsyncWebHandler {
   public:
-    CaptiveRequestHandler() {}
-    virtual ~CaptiveRequestHandler() {}
+    CaptiveRequestHandler() {
+    }
+
+    virtual ~CaptiveRequestHandler() {
+    }
 
     bool canHandle(AsyncWebServerRequest *request) {
         if (request->url().startsWith("/generate_204")) {
