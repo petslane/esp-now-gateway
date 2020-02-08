@@ -95,6 +95,7 @@ class Now {
             }
             // move incoming NOW message from `incomingBuffer` to `now_data_buffer`
             NowMessage msg;
+            msg.setStatus(NowMessageStatus::received);
             memcpy(&msg.buffer_data,
                    (const void *)&incomingBuffer[incomingBufferFilledSlot].header,
                    sizeof(NowMessageHeader));
