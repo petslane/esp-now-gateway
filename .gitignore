@@ -4,3 +4,4 @@ cmake-build-*
 CMakeListsPrivate.txt
 .pioenvs
 .piolibdeps
+.vscode

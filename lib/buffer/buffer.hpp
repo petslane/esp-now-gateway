@@ -20,13 +20,13 @@ namespace Buffer {
     };
     static char data[BUFFER_DATA_SIZE];
 
-    Index& get_index(int buffer_index) {
-        return (Index &) * (data + buffer_index);
+    Index &get_index(int buffer_index) {
+        return (Index &)*(data + buffer_index);
     }
-    Index& get_index_by_index(int index) {
+    Index &get_index_by_index(int index) {
         int buffer_index = 0;
-        for (int i=0; i < index; i++) {
-            int new_buffer_index = buffer_index + sizeof(Index) + ((Index *) (data + buffer_index))->msgLen;
+        for (int i = 0; i < index; i++) {
+            int new_buffer_index = buffer_index + sizeof(Index) + ((Index *)(data + buffer_index))->msgLen;
             if (new_buffer_index >= BUFFER_DATA_SIZE) {
                 break;
             }
@@ -56,7 +56,7 @@ namespace Buffer {
         if (used < 0) {
             return 0;
         }
-        return (uint16) BUFFER_DATA_SIZE - (uint16) used;
+        return (uint16)BUFFER_DATA_SIZE - (uint16)used;
     }
 
     bool is_buffer_empty() {
@@ -66,7 +66,7 @@ namespace Buffer {
     String get_data(uint8 index) {
         int data_start = 0;
         int data_len = 0;
-        for (int i=0; i < index; i++) {
+        for (int i = 0; i < index; i++) {
             Index idx = get_index(data_start);
             data_start += sizeof(Index) + idx.msgLen;
         }
@@ -78,9 +78,8 @@ namespace Buffer {
             return "";
         }
 
-
         char buf[data_len + 1];
-        memcpy(buf, data + data_start, (size_t) data_len);
+        memcpy(buf, data + data_start, (size_t)data_len);
         buf[data_len] = '\0';
 
         return String(buf);
@@ -89,7 +88,7 @@ namespace Buffer {
     void remove(uint8 index) {
         int data_start = 0;
         int data_len = 0;
-        for (int i=0; i < index; i++) {
+        for (int i = 0; i < index; i++) {
             Index idx = get_index(data_start);
             data_start += sizeof(Index) + idx.msgLen;
         }
@@ -99,7 +98,7 @@ namespace Buffer {
         memmove(&data[data_start], &data[data_start + data_len], BUFFER_DATA_SIZE - data_start - data_len);
         memset(&data[BUFFER_DATA_SIZE - data_len], '\0', data_len);
     }
-    
+
     bool append(Index index, const char *message, int message_len) {
         if (message_len > 250) {
             return false;
@@ -109,12 +108,12 @@ namespace Buffer {
         if (index_len + message_len >= get_buffer_free_space()) {
             return false;
         }
-        
+
         int free_index = get_free_buffer_index();
 
-        memcpy(&data[free_index], & index, index_len);
+        memcpy(&data[free_index], &index, index_len);
         if (message_len > 0) {
-            memcpy(&data[free_index + index_len], &message[0], (size_t) message_len);
+            memcpy(&data[free_index + index_len], &message[0], (size_t)message_len);
         }
 
         return true;
@@ -129,7 +128,7 @@ namespace Buffer {
         index.type = utils::msgType::send_now_message;
         index.id = id;
         memcpy(index.attr.send_now_message.mac, mac, 6);
-        index.msgLen = (uint8) len;
+        index.msgLen = (uint8)len;
         return append(index, message, len);
     }
 
@@ -138,4 +137,4 @@ namespace Buffer {
             data[i] = '\0';
         }
     }
-}
+} // namespace Buffer

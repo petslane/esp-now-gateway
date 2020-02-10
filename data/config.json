@@ -1,0 +1,18 @@
+{
+    "wifi": {
+        "ssid": "",
+        "password": ""
+    },
+    "ap": {
+        "name": "now_gateway"
+    },
+    "mqtt": {
+        "host": "192.168.0.29",
+        "port": 1883,
+        "base_topic": "now-gw/"
+    },
+    "devices": {
+        "60:01:94:35:05:aa": "NOW remote",
+        "36:33:33:33:33:33": "NOW old gateway"
+    }
+}

@@ -2,17 +2,15 @@
 
 ![logo]
 
-ESP-NOW Gateway with MQTT ([Homie v3][homie]) using 2 WeMos D1 minis where one WeMos D1 mini acts
+ESP-NOW Gateway with MQTT using 2 WeMos D1 minis where one WeMos D1 mini acts
 as ESP-NOW device for sending and receiving ESP-NOW messages and second WeMos D1 mini acts as WiFi device that relays
 ESP-NOW messages to/from MQTT channels. Provided Web UI allows to send ESP-NOW messages for testing purpose, monitor all
-incoming messages and define all known ESP-NOW devices which make them available as Homie v3 Node which in turn makes
-these remote ESP-NOW devices auto-discoverable by
-[OpenHAB and HomeAssistant (WIP)][OpenHAB-homie]
+incoming messages, configure WiFi connection and define all known ESP-NOW devices.
 
 ## Getting Started
 
 - GIT clone or download source
-- open `data/homie/config.json` and change `wifi` and `mqtt` parameters
+- open `data/config.json` and change `wifi` and `mqtt` parameters
 - connect first WeMos D1 mini with USB and upload sketch with command: (change `/dev/ttyUSB0` to USB port actually used)
   ```bash
   # Upload sketch
@@ -36,50 +34,41 @@ these remote ESP-NOW devices auto-discoverable by
 
 ### Configurations
 
-This project uses [homieiot/homie-esp8266][Homie-esp] to manage WiFi connection and handle MQTT topics according to
-[Homie v3.0.1 convention][Homie-spec]. For Homie, there is configuration file `data/homie/config.json` where
-[WiFi, MQTT parameters][Homie-esp-config] can be set. This config file must be changed!
+All configurations (WiFi, MQTT, NOW devices) are stored in `data/config.json` file.
 
 Web UI is implemented with [me-no-dev/ESPAsyncWebServer][ESPAsyncWebServer]. WebUI is protected with hardcoded
 username/password that can be changed with variables `AUTH_USERNAME` and `AUTH_PASSWORD` in `platformio.ini` file.
-WebUI itself is built, compressed and stored in `data/www` folder. Source code for WebUI will be released in separate
-repository.
+WebUI itself is built, compressed and stored in `data/www` folder. Source code for WebUI is in `web_ui` folder.
 
 If OLED shield is used, then uncomment `ENABLE_OLED_SHIELD` variable in `platformio.ini` file.
 
 Two WeMos D1 minis communicate with each-other via dedicated software serial pins implemented with
 [plerup/espsoftwareserial][espsoftwareserial].
 
-All defined ESP-NOW devices are stored in `data/devices.json` file. Devices can be defined via Web UI, but also directly
-in `data/devices.json` file and upload to SPIFFS. `data/devices.json` file content is JSON object with property names
-being MAC address of remote ESP-NOW device and value being object with single property `"name"` to name that device. All
-defined devices will be exposed as [Homie Node][homie-node] in MQTT.
+All defined ESP-NOW devices are stored in `data/config.json` file in `devices` property. Devices can be defined via
+Web UI, but also directly in `data/config.json` file and upload to SPIFFS. `devices` property value is JSON object with
+property names being MAC address of remote ESP-NOW device and value being name of the device. TODO: Optionally, only
+messages from defined devices will be relayed to MQTT.
 
 Gateway NOW MAC address is hardcoded to `30:30:30:30:30:30`. So all remote devices must send messages to that MAC
 address. TODO: Make Gateway address configurable.
 
 ### MQTT topics
 
-Gateway MQTT follows [Homie v3.0.1][Homie] convention, this means:
+Received NOW messages are published under `<topic_base>/<MAC>/message` MQTT topic.
+For sending NOW message, publish message under `<topic_base>/<MAC>/send` MQTT topic.
 
-- Receiving ESP-NOW message from defined device with mac `60:01:94:35:05:aa` will publish that received message into
-MQTT topic `homie/gateway/6001943505AA/message`
-- Sending ESP-NOW message to defined device with mac `60:01:94:35:05:aa` require publishing message to MQTT topic
-`homie/gateway/6001943505AA/message/set`
-- Receiving ESP-NOW message from undefined device with mac `35:05:aa:60:01:94` will publish that received message into
-MQTT topic `homie/gateway/message/3505AA600194`
-- Sending ESP-NOW message to undefined device with mac `35:05:aa:60:01:94` require publishing message to MQTT topic
-`homie/gateway/message/3505AA600194/set`
+`<topic_base>` is by default `now-gw` and changable from WebUI. `<MAC>` is mac address of NOW device, upper case with colons.
 
-[Homie]: https://homieiot.github.io/
-[OpenHAB-homie]: https://homieiot.github.io/implementations/#home-automation
+Examples:
+- Receiving ESP-NOW message from device with mac `60:01:94:35:05:aa` will publish that received message into
+MQTT topic `now-gw/60:01:94:35:05:AA/message`
+- Sending ESP-NOW message to device with mac `60:01:94:35:05:aa` require publishing message to MQTT topic
+`now-gw/60:01:94:35:05:AA/send`
+
 [PIO-install]: https://platformio.org/install/cli
-[Homie-esp]: https://github.com/homieiot/homie-esp8266/tree/develop-v3
-[Homie-spec]: https://homieiot.github.io/specification/
-[Homie-esp-config]: https://homieiot.github.io/homie-esp8266/docs/develop-v3/configuration/json-configuration-file/
 [ESPAsyncWebServer]: https://github.com/me-no-dev/ESPAsyncWebServer
 [espsoftwareserial]: https://github.com/plerup/espsoftwareserial
-[homie-node]: https://github.com/homieiot/convention/blob/develop/convention.md#nodes
 [logo]: image.png
 
 ### TODO
@@ -87,4 +76,7 @@ MQTT topic `homie/gateway/message/3505AA600194`
 - OLED shield buttons - As I have only version 1 (without buttons), then there is no button functionality. In the future
 I would like to implement some-kind of auto-pairing functionality for ESP-NOW devices, then these buttons would become
 very handy.
-- Publish WebUI source
+- Ignore messages from unknown now devices
+- Configureable NOW MAC address
+- NOW message delivery confirmation in MQTT
+- Configure MQTT from WebUI

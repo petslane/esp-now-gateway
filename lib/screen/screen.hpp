@@ -2,9 +2,10 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <mqtt.hpp>
 #include <stats.hpp>
 
-#define OLED_RESET 0  // GPIO0
+#define OLED_RESET 0 // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
 
 #define NUMFLAKES 10
@@ -12,25 +13,27 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define YPOS 1
 #define DELTAY 2
 
-
 #define LOGO16_GLCD_HEIGHT 16
-#define LOGO16_GLCD_WIDTH  16
+#define LOGO16_GLCD_WIDTH 16
 
 #if (SSD1306_LCDHEIGHT != 48)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
 class Screen {
-private:
+  private:
     unsigned long lastUpdate;
     uint8 loader;
-    Stats * stats;
-public:
-    Screen(Stats * stats) {
+    Stats *stats;
+    MQTT *mqtt;
+
+  public:
+    Screen(Stats *stats, MQTT *mqtt) {
         lastUpdate = 0;
         loader = 0;
 
         this->stats = stats;
+        this->mqtt = mqtt;
     }
     void setup() {
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -59,27 +62,26 @@ public:
         // WiFi
         station_status_t status = wifi_station_get_connect_status();
         switch (status) {
-            case STATION_GOT_IP:
-                display.println("WiFi OK");
-                break;
-            case STATION_NO_AP_FOUND:
-                display.println("WiFi No AP");
-                break;
-            case STATION_CONNECT_FAIL:
-                display.println("WiFi Fail");
-                break;
-            case STATION_WRONG_PASSWORD:
-                display.println("Wrong WiFi password");
-                break;
-            case STATION_IDLE:
-            default:
-                display.print("WiFi ");
-                display.println(spinner[loader]);
-
+        case STATION_GOT_IP:
+            display.println("WiFi OK");
+            break;
+        case STATION_NO_AP_FOUND:
+            display.println("WiFi No AP");
+            break;
+        case STATION_CONNECT_FAIL:
+            display.println("WiFi Fail");
+            break;
+        case STATION_WRONG_PASSWORD:
+            display.println("Wrong WiFi password");
+            break;
+        case STATION_IDLE:
+        default:
+            display.print("WiFi ");
+            display.println(spinner[loader]);
         }
 
         // MQTT
-        if (Homie.getMqttClient().connected()) {
+        if (mqtt->isConnected()) {
             display.println("MQTT OK");
         } else if (status == STATION_GOT_IP) {
             display.print("MQTT ");
@@ -94,8 +96,10 @@ public:
         display.print("/");
         display.println(stats->getNowSentMessagesSuccessful());
 
-        int buffer1FreeRelative = stats->getIncomingBufferSize() ? 100 * stats->getIncomingBufferFree() / stats->getIncomingBufferSize() : 0;
-        int buffer2FreeRelative = stats->getMessageBufferSize() ? 100 * stats->getMessageBufferFree() / stats->getMessageBufferSize() : 0;
+        int buffer1FreeRelative =
+            stats->getIncomingBufferSize() ? 100 * stats->getIncomingBufferFree() / stats->getIncomingBufferSize() : 0;
+        int buffer2FreeRelative =
+            stats->getMessageBufferSize() ? 100 * stats->getMessageBufferFree() / stats->getMessageBufferSize() : 0;
         display.drawLine(0, 46, 63 * buffer1FreeRelative / 100, 46, WHITE);
         display.drawLine(0, 47, 63 * buffer2FreeRelative / 100, 47, WHITE);
 
