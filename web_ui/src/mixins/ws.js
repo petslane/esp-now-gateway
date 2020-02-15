@@ -9,7 +9,7 @@ export default {
             ws.send(JSON.stringify({
                 type,
                 to,
-                id: id || new Date()*1,
+                id: (id || new Date()*1) % 4294967295,
                 message: message.substring(0, 250),
             }));
         }

@@ -58,7 +58,13 @@ address. TODO: Make Gateway address configurable.
 Received NOW messages are published under `<topic_base>/<MAC>/message` MQTT topic.
 For sending NOW message, publish message under `<topic_base>/<MAC>/send` MQTT topic.
 
-`<topic_base>` is by default `now-gw` and changable from WebUI. `<MAC>` is mac address of NOW device, upper case with colons.
+Optionally, it's possible to assign numeric id to message that can be used to get feedback if messaged delivery succeeded or not.
+To send message with id, publish message under `<topic_base>/<MAC>/send/id/<id>` MQTT topic and to get feedback of delivery status,
+subscribe to `<topic_base>/<MAC>/message/report/<id>` MQTT topic.
+
+`<topic_base>` is by default `now-gw` and changeable from WebUI.
+`<MAC>` is mac address of NOW device, upper case with colons.
+`<id>` is numeric value (max 4294967295).
 
 Examples:
 - Receiving ESP-NOW message from device with mac `60:01:94:35:05:aa` will publish that received message into
@@ -78,5 +84,4 @@ I would like to implement some-kind of auto-pairing functionality for ESP-NOW de
 very handy.
 - Ignore messages from unknown now devices
 - Configureable NOW MAC address
-- NOW message delivery confirmation in MQTT
 - Configure MQTT from WebUI

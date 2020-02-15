@@ -6,6 +6,12 @@
 #include <Ticker.h>
 #include <config.hpp>
 
+enum OutgoingMqttMessageType : char {
+    message,
+    report_success,
+    report_fail,
+};
+
 class MQTT {
   private:
     AsyncMqttClient mqttClient;
@@ -16,6 +22,7 @@ class MQTT {
     struct OutgoingMqttMessage {
         char mac[6];
         String *message;
+        OutgoingMqttMessageType type;
     };
     std::vector<OutgoingMqttMessage> outgoingMqttMessages;
 
@@ -43,6 +50,7 @@ class MQTT {
 
         mqttClient.publish((baseTopic + "connected").c_str(), 0, false, "ok");
         mqttClient.subscribe((baseTopic + "+/send").c_str(), 2);
+        mqttClient.subscribe((baseTopic + "+/send/id/+").c_str(), 2);
     }
 
     void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -78,11 +86,12 @@ class MQTT {
         if (!topicTemplate.endsWith("/")) {
             topicTemplate += "/";
         }
-        topicTemplate += "%02x:%02x:%02x:%02x:%02x:%02x/send";
+        topicTemplate += "%02x:%02x:%02x:%02x:%02x:%02x/send/id/%lu";
 
         int mac[6];
-        int i = sscanf(topic, topicTemplate.c_str(), &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-        if (i != 6) {
+        unsigned long id = 0;
+        int i = sscanf(topic, topicTemplate.c_str(), &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5], &id);
+        if (i != 7 && i != 6) {
             Serial.println("[mqtt] Received topic did not contain valid MAC address");
             return;
         }
@@ -91,7 +100,7 @@ class MQTT {
             mac2[i] = (char)mac[i];
         }
 
-        Buffer::add_send_now_msg(mac2, message.c_str(), message.length(), 0);
+        Buffer::add_send_now_msg(mac2, message.c_str(), message.length(), i == 7 && id > 0 ? id : millis());
     }
 
     bool macStringToCharArray(const char *from, char *to) {
@@ -151,16 +160,21 @@ class MQTT {
             mac.toUpperCase();
             topic += mac;
             topic += "/message";
-
-            mqttClient.publish(topic.c_str(), 1, false, outMsg.message->c_str(), outMsg.message->length());
-
-            Serial.printf("[mqtt] Publishing to topic %s message %s\n", topic.c_str(), outMsg.message->c_str());
+            if (outMsg.type == report_fail || outMsg.type == report_success) {
+                topic += "/report/" + (*outMsg.message);
+                String report = outMsg.type == report_success ? "success" : "fail";
+                mqttClient.publish(topic.c_str(), 1, false, report.c_str(), report.length());
+                Serial.printf("[mqtt] Publishing to topic %s message report %s\n", topic.c_str(), report.c_str());
+            } else {
+                mqttClient.publish(topic.c_str(), 1, false, outMsg.message->c_str(), outMsg.message->length());
+                Serial.printf("[mqtt] Publishing to topic %s message %s\n", topic.c_str(), outMsg.message->c_str());
+            }
 
             delete outMsg.message;
         }
     }
 
-    void send(const char *mac, const char *message, size_t len) {
+    void send(const char *mac, const char *message, size_t len, OutgoingMqttMessageType type) {
         OutgoingMqttMessage o;
         memcpy(o.mac, mac, 6);
 
@@ -168,6 +182,7 @@ class MQTT {
         memcpy(msg, message, len);
         msg[len] = '\0';
         o.message = new String(msg);
+        o.type = type;
 
         outgoingMqttMessages.push_back(o);
 

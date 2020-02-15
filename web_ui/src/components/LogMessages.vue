@@ -10,9 +10,24 @@
         </div>
 
         <div class="log-message-container">
-            <div v-for="message in webSocketMessages" :class="getLogMessageClass(message)">
+            <div v-for="(message, i) in webSocketMessages" :class="getLogMessageClass(message)" :key="i">
                 <span class="log-message-datetime" v-html="getFormattedDateTime(message[1])"></span>
                 <span v-if="message[0] === 'data'">{{ message[2].data }}</span>
+                <span v-else-if="message[0] === 'in'">
+                    <span style="display: inline-block">
+                        Received from {{ message[2].from }}
+                    </span>
+                    <div class="log-message-now-data">{{ message[2].msg }}</div>
+                </span>
+                <span v-else-if="message[0] === 'out'">
+                    <span style="display: inline-block">
+                        Sent to {{ message[2].to }}
+                        <small v-if="message[2].delivered">(delivered)</small>
+                        <small v-else-if="message[2].delivered === false">(not delivered)</small>
+                        <small v-else>(sending)</small>
+                    </span>
+                    <div class="log-message-now-data">{{ message[2].msg }}</div>
+                </span>
             </div>
         </div>
     </div>
@@ -41,6 +56,14 @@
                 if (message[0] === 'status') {
                     classes['log-message-status-connected'] = !!message[2];
                     classes['log-message-status-disconnected'] = !message[2];
+                } else if (message[0] === 'in') {
+                    classes['log-message-in'] = true;
+                    classes['log-message-now-data'] = true;
+                } else if (message[0] === 'out') {
+                    classes['log-message-out'] = true;
+                    classes['log-message-delivered'] = !!message[2].delivered;
+                    classes['log-message-not-delivered'] = message[2].delivered === false;
+                    classes['log-message-now-data'] = true;
                 } else if (message[0] === 'error') {
                 } else if (message[0] === 'data') {
                     classes['log-message-message'] = true;
@@ -94,11 +117,26 @@
         &.log-message-status-connected {
             background-color: lightgreen;
         }
+        &.log-message-in {
+            background-color: rgb(180, 219, 255);
+        }
+        &.log-message-out {
+            background-color: rgb(238, 240, 207);
+        }
+        &.log-message-out.log-message-delivered {
+            background-color: rgb(196, 248, 128);
+        }
+        &.log-message-out.log-message-not-delivered {
+            background-color: rgb(248, 200, 128);
+        }
         &.log-message-status-disconnected {
             background-color: lightsalmon;
         }
         &.log-message-message {
             background-color: lightcyan;
+        }
+        .log-message-now-data {
+            font-family: monospace;
         }
         .log-message-datetime {
             font-style: oblique;
