@@ -11,6 +11,9 @@
         "port": 1883,
         "base_topic": "now-gw/"
     },
+    "now": {
+        "mac": "30:30:30:30:30:30"
+    },
     "devices": {
         "60:01:94:35:05:aa": "NOW remote",
         "36:33:33:33:33:33": "NOW old gateway"

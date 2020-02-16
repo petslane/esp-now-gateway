@@ -94,6 +94,7 @@ class WebServer {
             root["current_error"] = "Connecting";
         }
         root["ap_name"] = config.ap.name;
+        root["now_mac"] = utils::macCharArrayToString(config.now.mac);
     }
 
     void apiSaveApName(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String name) {
@@ -196,6 +197,23 @@ class WebServer {
         apiGetDevices(request, response, root);
     }
 
+    void apiSaveNowMac(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String mac) {
+        root["status"] = false;
+
+        char mac_c[7];
+        if (!utils::macStringToCharArray(mac, mac_c)) {
+            root["error"] = "Invalid MAC address value";
+            return;
+        }
+
+        memcpy(config.now.mac, mac_c, 6);
+        Config::saveConfig();
+        config.now.changed = true;
+
+        root["status"] = true;
+        root["now_mac"] = utils::macCharArrayToString(config.now.mac);
+    }
+
     bool apiRequireParam(JsonObject &jsonObj, String param, AsyncWebServerRequest *request) {
         if (!jsonObj.containsKey(param)) {
             request->send(400, "text/plain", "Missing parameter " + param);
@@ -288,6 +306,8 @@ class WebServer {
                     requiredKeys.emplace_back("pass");
                 } else if (type.equals("save_ap_name")) {
                     requiredKeys.emplace_back("name");
+                } else if (type.equals("save_now_mac")) {
+                    requiredKeys.emplace_back("mac");
                 }
                 for (std::vector<String>::iterator it = requiredKeys.begin(); it != requiredKeys.end(); ++it) {
                     if (!apiRequireParam(jsonObj, *it, request)) {
@@ -323,6 +343,9 @@ class WebServer {
                     String name = jsonObj["name"].as<String>();
                     String mac = jsonObj["mac"].as<String>();
                     apiSaveDevice(request, response, root, id, name, mac);
+                } else if (type.equals("save_now_mac")) {
+                    String mac = jsonObj["mac"].as<String>();
+                    apiSaveNowMac(request, response, root, mac);
                 } else {
                     return request->send(400, "text/plain", "Unknown type");
                 }

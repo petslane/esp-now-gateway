@@ -15,6 +15,7 @@ export default new Vuex.Store({
     currentWifiError: '',
     wifiNetworks: [],
     scanningWifiNetworks: false,
+    nowMac: '',
     nowDevices: [],
       stats: {
           buffer1_free: 0,
@@ -121,7 +122,11 @@ export default new Vuex.Store({
         Vue.set(state, 'currentWifiNetwork', payload.current);
         Vue.set(state, 'currentWifiConnected', payload.current_connected);
         Vue.set(state, 'currentWifiError', payload.current_error);
-    },
+        Vue.set(state, 'nowMac', payload.now_mac);
+      },
+      setNowMac(state, payload) {
+        Vue.set(state, 'nowMac', payload.now_mac);
+      },
   },
   actions: {
       webSocketStatus ({ commit }, payload) {
@@ -211,6 +216,11 @@ export default new Vuex.Store({
           const result = await api('save_ap_name', { name: apName });
 
           commit('setWifiSettings', result);
+      },
+      async saveNowMac ({ commit, dispatch }, mac) {
+          const result = await api('save_now_mac', { mac });
+
+          commit('setNowMac', result);
       },
   }
 });
