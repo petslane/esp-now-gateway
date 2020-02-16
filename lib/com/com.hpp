@@ -60,18 +60,40 @@ class Com {
             String from = doc["from"].as<String>();
             char mac[7];
             if (utils::macStringToCharArray(from, mac)) {
-                this->mqtt->send(mac, msg.c_str(), msg.length());
-                ws->textAll((char *)"Message received");
+                this->mqtt->send(mac, msg.c_str(), msg.length(), OutgoingMqttMessageType::message);
+
+                this->ws->send("type",
+                               (const char *)"now_received",
+                               "id",
+                               doc["id"].as<long>(),
+                               "from",
+                               from.c_str(),
+                               "msg",
+                               msg.c_str());
             }
         } else if (type == utils::msgType::now_message_delivered) {
             unsigned long id = doc["id"].as<unsigned long>();
+            String to = doc["to"].as<String>();
             Serial.printf("[com] Message %lu delivered\n", id);
             this->swSer->println("");
-            ws->textAll((char *)"Message delivered");
+            this->ws->send("type", "sent", "id", id, "to", to.c_str(), "msg", doc["msg"].as<String>().c_str());
+
+            char mac[7];
+            utils::macStringToCharArray(to, mac);
+            char msg[20];
+            int len = sprintf(msg, "%lu", id);
+            this->mqtt->send(mac, msg, len, OutgoingMqttMessageType::report_success);
         } else if (type == utils::msgType::now_message_not_delivered) {
+            String to = doc["to"].as<String>();
             unsigned long id = doc["id"].as<unsigned long>();
             Serial.printf("[com] Message %lu NOT delivered\n", id);
-            ws->textAll((char *)"Message not delivered");
+            this->ws->send("type", "not_sent", "id", id, "to", to.c_str(), "msg", doc["msg"].as<String>().c_str());
+
+            char mac[7];
+            utils::macStringToCharArray(to, mac);
+            char msg[20];
+            int len = sprintf(msg, "%lu", id);
+            this->mqtt->send(mac, msg, len, OutgoingMqttMessageType::report_fail);
         } else if (type == utils::msgType::stats) {
             Serial.printf("[com] Stats update from NOW node\n");
             String data = doc["data"].as<String>();
@@ -143,7 +165,7 @@ class Com {
 
         json["type"].set((int)type);
         if (id) {
-            json["id"].set(id);
+            json["id"].set<unsigned long>(id);
         }
         if (name1.length() > 0) {
             json[name1].set(value1);
@@ -187,15 +209,22 @@ class Com {
             if (dataIndex.type == utils::msgType::send_now_message) {
                 StaticJsonDocument<JSON_OBJECT_SIZE(6)> doc;
                 JsonObject root = doc.to<JsonObject>();
+                String mac = utils::macCharArrayToString(dataIndex.attr.send_now_message.mac);
                 root["type"] = (int)utils::msgType::send_now_message;
-                const String string = Buffer::get_data(0);
-                root["msg"] = string;
-                root["to"] = utils::macCharArrayToString(dataIndex.attr.send_now_message.mac);
-                if (dataIndex.id) {
-                    root["id"] = dataIndex.id;
+                String msg = Buffer::get_data(0);
+                root["msg"] = msg.c_str();
+                root["to"] = mac.c_str();
+                unsigned long id = dataIndex.id;
+                if (!id) {
+                    id = millis();
                 }
+                root["id"] = id;
 
                 sendJson(doc);
+
+#if DEV_MODE == 1
+                this->ws->send("type", "sending", "id", id, "to", mac.c_str(), "msg", msg.c_str());
+#endif
 
                 Buffer::remove(0);
             }

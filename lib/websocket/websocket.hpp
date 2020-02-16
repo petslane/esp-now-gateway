@@ -132,4 +132,51 @@ class WebSocket {
     void textAll(const char *msg) {
         ws->textAll(msg);
     }
+
+    template <typename T1> void send(const char *name1, T1 value1) {
+        send(name1, value1, "", "");
+    }
+
+    template <typename T1, typename T2> void send(const char *name1, T1 value1, const char *name2, T2 value2) {
+        send(name1, value1, name2, value2, "", "");
+    }
+
+    template <typename T1, typename T2, typename T3>
+    void send(const char *name1, T1 value1, const char *name2, T2 value2, const char *name3, T3 value3) {
+        send(name1, value1, name2, value2, name3, value3, "", "");
+    }
+
+    template <typename T1, typename T2, typename T3, typename T4>
+    void send(const char *name1, T1 value1, const char *name2, T2 value2, const char *name3, T3 value3,
+              const char *name4, T4 value4) {
+        send(name1, value1, name2, value2, name3, value3, name4, value4, "", "");
+    }
+
+    template <typename T1, typename T2, typename T3, typename T4, typename T5>
+    void send(const char *name1, T1 value1, const char *name2, T2 value2, const char *name3, T3 value3,
+              const char *name4, T4 value4, const char *name5, T5 value5) {
+        size_t size = JSON_OBJECT_SIZE(5);
+        DynamicJsonDocument doc(size);
+        JsonObject json = doc.to<JsonObject>();
+
+        if (strlen(name1) > 0) {
+            json[name1].set(value1);
+        }
+        if (strlen(name2) > 0) {
+            json[name2].set(value2);
+        }
+        if (strlen(name3) > 0) {
+            json[name3].set(value3);
+        }
+        if (strlen(name4) > 0) {
+            json[name4].set(value4);
+        }
+        if (strlen(name5) > 0) {
+            json[name5].set(value5);
+        }
+
+        String buffer;
+        serializeJson(doc, buffer);
+        textAll(buffer.c_str());
+    }
 };
