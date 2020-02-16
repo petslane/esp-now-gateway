@@ -11,6 +11,9 @@ namespace utils {
         now_message_not_delivered = 3,
         received_now_message = 4,
         stats = 5,
+        request_mac = 6,
+        set_mac = 7,
+        confirm_mac = 8,
     };
 
     String macCharArrayToString(char *mac) {

@@ -1,5 +1,12 @@
 <template>
     <div>
+        <h4>NOW gateway</h4>
+        <div class="content">
+            <mac-input placeholder="MAC address" class="content" v-model="nowMacInput" />
+            <span class="spacer"></span>
+            <ui-button @click="nowMacSave()">Save</ui-button>
+        </div>
+
         <h4>Access Point</h4>
         <small><i>AP will be enabled only on missing WiFi connection</i></small>
         <div class="content">
@@ -90,6 +97,7 @@
                 connectToWifi: undefined,
                 connectPassword: undefined,
                 apNameInput: '',
+                nowMacInput: '',
             };
         },
         computed: {
@@ -100,6 +108,7 @@
                 scanning: 'scanningWifiNetworks',
                 networks: 'wifiNetworks',
                 apName: 'apName',
+                nowMac: 'nowMac',
             }),
         },
         mounted() {
@@ -108,7 +117,10 @@
         watch: {
             apName(value) {
                 this.apNameInput = value;
-            }
+            },
+            nowMac(value) {
+                this.nowMacInput = value;
+            },
         },
         methods: {
             scan() {
@@ -116,6 +128,9 @@
             },
             apSave() {
                 this.$store.dispatch('saveAP', this.apNameInput);
+            },
+            nowMacSave() {
+                this.$store.dispatch('saveNowMac', this.nowMacInput);
             },
             connectModal(network) {
                 this.modalConnect = true;

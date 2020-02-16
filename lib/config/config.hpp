@@ -19,6 +19,11 @@ struct ConfigStruct {
     struct {
         String name;
     } ap;
+
+    struct {
+        char mac[7];
+        bool changed; // this value is not saved to JSON
+    } now;
 };
 
 ConfigStruct config;
@@ -101,6 +106,13 @@ class Config {
 
         JsonObject ap = root["ap"];
         config.ap.name = ap["name"].as<String>();
+
+        JsonObject now = root["now"];
+        String nowMac = now["mac"].as<String>();
+        if (!utils::macStringToCharArray(nowMac, config.now.mac) || memcmp(config.now.mac, "\0\0\0\0\0\0", 6) == 0) {
+            utils::macStringToCharArray("30:30:30:30:30:30", config.now.mac);
+        }
+        config.now.changed = true;
     }
 
     static String saveConfig() {
@@ -124,6 +136,12 @@ class Config {
 
         JsonObject ap = root["ap"];
         ap["name"] = config.ap.name;
+
+        if (!root.containsKey("now")) {
+            root.createNestedObject("now");
+        }
+        JsonObject now = root["now"];
+        now["mac"] = utils::macCharArrayToString(config.now.mac);
 
         return setJson(&doc);
     }

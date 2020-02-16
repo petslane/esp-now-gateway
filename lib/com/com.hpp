@@ -25,6 +25,7 @@ class Com {
     SoftwareSerial *swSer;
     Stats *stats;
     long lastStatsReportTime = 0;
+    long lastMacComTime = 0;
     bool statsChanged;
 #if DEV_MODE == 1
     MQTT *mqtt;
@@ -55,6 +56,17 @@ class Com {
         uint8 type = doc["type"].as<uint8>();
         if (false) {
 #if DEV_MODE == 1
+        } else if (type == utils::msgType::request_mac) {
+            this->send(utils::msgType::set_mac, 0, "mac", utils::macCharArrayToString(config.now.mac));
+        } else if (type == utils::msgType::confirm_mac) {
+            String mac = doc["mac"].as<String>();
+            char mac_c[7];
+            utils::macStringToCharArray(mac, mac_c);
+            if (memcmp(mac_c, config.now.mac, 6) != 0) {
+                memcpy(config.now.mac, mac_c, 6);
+                Config::saveConfig();
+            }
+            config.now.changed = false;
         } else if (type == utils::msgType::received_now_message) {
             String msg = doc["msg"].as<String>();
             String from = doc["from"].as<String>();
@@ -100,6 +112,13 @@ class Com {
             stats->unpackRemoteData(data);
 #endif // DEV_MODE == 1
 #if DEV_MODE == 2
+        } else if (type == utils::msgType::set_mac) {
+            Serial.println("[com] Received NOW MAC address");
+            String mac = doc["mac"].as<String>();
+            char mac_c[7];
+            if (utils::macStringToCharArray(mac, mac_c)) {
+                onNowMacChangeCallback(mac_c);
+            }
         } else if (type == (uint8)utils::msgType::send_now_message) {
             Serial.println("[com] Sending NOW message");
             String msg = doc["msg"].as<String>();
@@ -136,6 +155,9 @@ class Com {
     }
 #endif
 #if DEV_MODE == 2
+    typedef std::function<void(const char *)> OnNowMacChangeCallback;
+    OnNowMacChangeCallback onNowMacChangeCallback;
+
     Com(Stats *stats) {
         swSer = new SoftwareSerial(SERIAL_PIN_2, SERIAL_PIN_1, false);
         this->stats = stats;
@@ -186,6 +208,12 @@ class Com {
     }
 
     void loop() {
+#if DEV_MODE == 1
+        if (config.now.changed && millis() - lastMacComTime > 1000) {
+            this->send(utils::msgType::set_mac, 0, "mac", utils::macCharArrayToString(config.now.mac));
+            lastMacComTime = millis();
+        }
+#endif
         bool hasFullData = false;
         while (this->swSer->available() > 0) {
             char c = (char)this->swSer->read();

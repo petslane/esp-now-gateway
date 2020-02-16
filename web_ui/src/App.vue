@@ -2,7 +2,7 @@
     <div id="app">
         <div class="tabs">
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_DEVICES }" @click="showPage(C.PAGE_DEVICES)">Now devices</a>
-            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_WIFI }" @click="showPage(C.PAGE_WIFI)">WiFi</a>
+            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_WIFI }" @click="showPage(C.PAGE_WIFI)">Wireless</a>
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_SEND_MSG }" @click="showPage(C.PAGE_SEND_MSG)">Send NOW messages</a>
             <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_STATS }" @click="showPage(C.PAGE_STATS)">Stats</a>
         </div>

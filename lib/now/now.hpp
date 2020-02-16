@@ -49,6 +49,9 @@ class Now {
     Com *com;
     Stats *stats;
 
+    unsigned long lastMacComTime;
+    boolean isMacSet = false;
+
     /**
      * Callback for NOW messages to be sent. Adds message to queue.
      */
@@ -71,6 +74,16 @@ class Now {
         return added;
     }
 
+    void setMac(const char *mac) {
+        Serial.println("[now] Setting NOW MAC address");
+        memcpy(gatewayMac, mac, 6);
+        wifi_set_macaddr(SOFTAP_IF, gatewayMac);
+        wifi_get_macaddr(SOFTAP_IF, gatewayMac);
+        this->com->send(
+            utils::msgType::confirm_mac, 0, (String) "mac", utils::macCharArrayToString((char *)gatewayMac));
+        this->isMacSet = true;
+    }
+
   public:
     Now(Com *c, Stats *stats) {
         this->com = c;
@@ -85,9 +98,17 @@ class Now {
         this->stats->setIncomingBufferSize(INCOMING_BUFFER_SIZE);
         this->stats->setMessageBufferFree(NOW_BUFFER_SIZE);
         this->stats->setMessageBufferSize(NOW_BUFFER_SIZE);
+
+        this->lastMacComTime = 0;
+        this->com->onNowMacChangeCallback = std::bind(&Now::setMac, this, std::placeholders::_1);
     }
 
     void loop() {
+        if (!this->isMacSet && millis() - this->lastMacComTime > 1000) {
+            this->lastMacComTime = millis();
+            this->com->send(utils::msgType::request_mac, 0, (String) "", (String) "");
+        }
+
         // move `incomingBuffer` messages to `now_data_buffer`
         while (true) {
             if (!incomingBuffer[incomingBufferFilledSlot].set) {

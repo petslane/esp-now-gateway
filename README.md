@@ -50,8 +50,8 @@ Web UI, but also directly in `data/config.json` file and upload to SPIFFS. `devi
 property names being MAC address of remote ESP-NOW device and value being name of the device. TODO: Optionally, only
 messages from defined devices will be relayed to MQTT.
 
-Gateway NOW MAC address is hardcoded to `30:30:30:30:30:30`. So all remote devices must send messages to that MAC
-address. TODO: Make Gateway address configurable.
+Default gateway NOW MAC address is `30:30:30:30:30:30` and can be changed from WebUI. All remote devices must send
+messages to configured MAC address.
 
 ### MQTT topics
 
@@ -83,5 +83,4 @@ MQTT topic `now-gw/60:01:94:35:05:AA/message`
 I would like to implement some-kind of auto-pairing functionality for ESP-NOW devices, then these buttons would become
 very handy.
 - Ignore messages from unknown now devices
-- Configureable NOW MAC address
 - Configure MQTT from WebUI
