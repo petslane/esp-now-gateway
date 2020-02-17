@@ -156,45 +156,6 @@
                     this.connectingToWifiError = 'Unable to connect to WIFI. Wrong password or WIFI network not reachable.';
                 }
             },
-            modalClose() {
-                this.modalShow = false;
-            },
-            modalDeleteClose() {
-                this.modalDeleteShow = false;
-            },
-            addDevice() {
-                this.modalTitle = 'Add new device';
-                this.editMac = '';
-                this.editName = '';
-                this.selectedMac = undefined;
-                this.modalShow = true;
-            },
-            editDevice(mac, name) {
-                this.modalTitle = 'Edit device';
-                this.editMac = mac;
-                this.editName = name;
-                this.selectedMac = mac;
-                this.modalShow = true;
-            },
-            deleteDevice(mac, name) {
-                this.editMac = mac;
-                this.editName = name;
-                this.selectedMac = mac;
-                this.modalDeleteShow = true;
-            },
-            actionDelete() {
-                this.$store.dispatch('deleteDevice', this.selectedMac)
-                    .then(() => this.modalDeleteClose());
-            },
-            actionSave() {
-                this.$store.dispatch('saveDevice', {
-                    id: this.selectedMac,
-                    mac: this.editMac,
-                    name: this.editName,
-                })
-                    .then(() => this.modalClose())
-                    .catch((err) => alert(err.message));
-            },
         },
     };
 </script>
