@@ -1,11 +1,15 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-import api from "./api";
+import api from "../api";
+import nowDevices from "./nowDevices";
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
   strict: process.env.NODE_ENV !== 'production',
+  modules: {
+    nowDevices: nowDevices,
+  },
   state: {
     webSocketConnected: false,
     webSocketMessages: [],
@@ -16,7 +20,6 @@ export default new Vuex.Store({
     wifiNetworks: [],
     scanningWifiNetworks: false,
     nowMac: '',
-    nowDevices: [],
       stats: {
           buffer1_free: 0,
           buffer1_size: 0,
@@ -33,7 +36,6 @@ export default new Vuex.Store({
           return state.webSocketMessages;
       },
       getWebSocketConnected: (state) => state.webSocketConnected,
-      getNowDevices: (state) => state.nowDevices,
   },
   mutations: {
       webSocketStatus (state, payload) {
@@ -100,9 +102,6 @@ export default new Vuex.Store({
       clearLogMessages (state) {
           Vue.set(state, 'webSocketMessages', []);
       },
-      setNowDevices (state, payload) {
-          Vue.set(state, 'nowDevices', payload);
-      },
       setWifiNetworks(state, payload) {
           payload.sort((a, b) => {
               return a[2] < b[2];
@@ -140,28 +139,6 @@ export default new Vuex.Store({
       },
       clearLogMessages ({ commit }) {
           commit('clearLogMessages');
-      },
-      fetchNowDevices ({ commit }) {
-          return api('get_devices')
-              .then(json => {
-                  commit('setNowDevices', json.data);
-              });
-      },
-      deleteDevice ({ commit }, id) {
-          return api('delete_device', { id })
-              .then(json => {
-                  commit('setNowDevices', json.data);
-              });
-      },
-      saveDevice ({ commit }, payload) {
-          return api('save_device', {
-              id: payload.id,
-              name: payload.name,
-              mac: payload.mac,
-          })
-              .then(json => {
-                  commit('setNowDevices', json.data);
-              });
       },
       async getWifiNetworks ({ commit, dispatch }) {
           const json = await api('get_wifi_networks');

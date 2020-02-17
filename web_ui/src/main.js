@@ -33,7 +33,7 @@ new Vue({
 
         Vue.prototype.$ws = websocket;
 
-        this.$store.dispatch('fetchNowDevices');
+        this.$store.dispatch('nowDevices/fetch');
     },
     render: h => h(App)
 }).$mount('#app');

@@ -6,7 +6,7 @@
         </div>
 
         <div class="container">
-            <div v-for="(device, mac, index) in getNowDevices" class="content" :class="{ odd: !index%2, even: index%2 }">
+            <div v-for="(device, mac, index) in getNowDevices" class="content" :class="{ odd: !index%2, even: index%2 }" :key="mac">
                 <span class="mac" v-html="mac"></span>
                 <span class="spacer"></span>
                 <span class="name">{{ device }}</span>
@@ -60,7 +60,7 @@
         },
         computed: {
             ...mapGetters({
-                getNowDevices: 'getNowDevices',
+                getNowDevices: 'nowDevices/getNowDevices',
             }),
         },
         methods: {
@@ -91,11 +91,11 @@
                 this.modalDeleteShow = true;
             },
             actionDelete() {
-                this.$store.dispatch('deleteDevice', this.selectedMac)
+                this.$store.dispatch('nowDevices/remove', this.selectedMac)
                     .then(() => this.modalDeleteClose());
             },
             actionSave() {
-                this.$store.dispatch('saveDevice', {
+                this.$store.dispatch('nowDevices/save', {
                     id: this.selectedMac,
                     mac: this.editMac,
                     name: this.editName,
