@@ -146,7 +146,7 @@ class Config {
         return setJson(&doc);
     }
 
-    static String saveDevice(String mac, String name) {
+    static String saveDevice(String mac, String name, String id) {
         DynamicJsonDocument doc(500);
         String errorMessage = getJson(&doc);
 
@@ -160,11 +160,14 @@ class Config {
         }
         JsonObject devices = root["devices"];
 
+        if (id.length() && devices.containsKey(id)) {
+            devices.remove(id);
+        }
         if (devices.containsKey(mac)) {
             devices.remove(mac);
         }
         if (name.length()) {
-            devices[mac] = name;
+            devices[mac.c_str()] = name.c_str();
         }
 
         serializeJson(doc, Serial);
