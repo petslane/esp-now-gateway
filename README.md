@@ -1,5 +1,6 @@
 # ESP-NOW Gateway
 
+![PlatformIO build](https://github.com/petslane/esp-now-gateway/workflows/PlatformIO%20build/badge.svg)
 ![VueJS bundle](https://github.com/petslane/esp-now-gateway/workflows/VueJS%20bundle/badge.svg)
 
 ![logo]
