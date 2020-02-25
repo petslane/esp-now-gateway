@@ -29,7 +29,7 @@
         computed: {
             ...mapGetters({
                 webSocketMessages: 'getWebSocketMessages',
-                webSocketConnected: 'getWebSocketConnected',
+                webSocketConnected: 'logMessages/getConnected',
             }),
         },
         watch: {

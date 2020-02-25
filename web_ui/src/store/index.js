@@ -2,6 +2,8 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import api from "../api";
 import nowDevices from "./nowDevices";
+import logMessages from "./logMessages";
+import stats from "./stats";
 
 Vue.use(Vuex);
 
@@ -9,10 +11,10 @@ export default new Vuex.Store({
   strict: process.env.NODE_ENV !== 'production',
   modules: {
     nowDevices: nowDevices,
+    logMessages: logMessages,
+    stats: stats,
   },
   state: {
-    webSocketConnected: false,
-    webSocketMessages: [],
     apName: undefined,
     currentWifiNetwork: '',
     currentWifiConnected: false,
@@ -20,88 +22,10 @@ export default new Vuex.Store({
     wifiNetworks: [],
     scanningWifiNetworks: false,
     nowMac: '',
-      stats: {
-          buffer1_free: 0,
-          buffer1_size: 0,
-          buffer2_free: 0,
-          buffer2_size: 0,
-          missed_incoming_messages: 0,
-          msgs_failed_sent: 0,
-          msgs_received: 0,
-          msgs_success_sent: 0,
-      },
   },
   getters: {
-      getWebSocketMessages: (state) => {
-          return state.webSocketMessages;
-      },
-      getWebSocketConnected: (state) => state.webSocketConnected,
   },
   mutations: {
-      webSocketStatus (state, payload) {
-          state.webSocketConnected = payload;
-          state.webSocketMessages.push(['status', new Date(), payload]);
-      },
-      webSocketError (state, payload) {
-          state.webSocketMessages.push(['error', new Date(), payload]);
-      },
-      webSocketData (state, payload) {
-          try {
-              const data = JSON.parse(payload.data);
-              if (!data) {
-                  state.webSocketMessages.push(['data', new Date(), payload]);
-                  if (state.webSocketMessages.length > 100) {
-                      state.webSocketMessages.splice(0, state.webSocketMessages.length - 100);
-                  }
-                  return;
-              }
-              if (data.type === 'stats') {
-                  const properties = [
-                      'buffer1_free',
-                      'buffer1_size',
-                      'buffer2_free',
-                      'buffer2_size',
-                      'missed_incoming_messages',
-                      'msgs_failed_sent',
-                      'msgs_received',
-                      'msgs_success_sent',
-                  ];
-                  properties.map((p) => {
-                      Vue.set(state.stats, p, data[p]);
-                  });
-              } else if (data.type === 'now_received') {
-                 state.webSocketMessages.push(['in', new Date(), {
-                     from: data.from,
-                     msg: data.msg,
-                 }]);
-              } else if (data.type === 'sending') {
-                 state.webSocketMessages.push(['out', new Date(), {
-                     id: data.id,
-                     to: data.to,
-                     msg: data.msg,
-                     delivered: undefined,
-                 }]);
-              } else if (data.type === 'sent' || data.type === 'not_sent') {
-                 const i = state.webSocketMessages.findIndex((log) => log[2].id === data.id && log[2].delivered === undefined);
-                 if (i >= 0) {
-                    Vue.set(state.webSocketMessages[i][2], 'delivered', data.type === 'sent' ? new Date() : false);
-                 }
-              } else {
-                  state.webSocketMessages.push(['data', new Date(), payload]);
-                  if (state.webSocketMessages.length > 100) {
-                      state.webSocketMessages.splice(0, state.webSocketMessages.length - 100);
-                  }
-              }
-          } catch (e) {
-              state.webSocketMessages.push(['data', new Date(), payload]);
-              if (state.webSocketMessages.length > 100) {
-                  state.webSocketMessages.splice(0, state.webSocketMessages.length - 100);
-              }
-          }
-      },
-      clearLogMessages (state) {
-          Vue.set(state, 'webSocketMessages', []);
-      },
       setWifiNetworks(state, payload) {
           payload.sort((a, b) => {
               return a[2] < b[2];
@@ -128,18 +52,6 @@ export default new Vuex.Store({
       },
   },
   actions: {
-      webSocketStatus ({ commit }, payload) {
-          commit('webSocketStatus', payload);
-      },
-      webSocketError ({ commit }, payload) {
-          commit('webSocketError', payload);
-      },
-      webSocketData ({ commit }, payload) {
-          commit('webSocketData', payload);
-      },
-      clearLogMessages ({ commit }) {
-          commit('clearLogMessages');
-      },
       async getWifiNetworks ({ commit, dispatch }) {
           const json = await api('get_wifi_networks');
 
