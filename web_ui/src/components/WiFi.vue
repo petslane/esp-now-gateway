@@ -101,7 +101,7 @@
             };
         },
         computed: {
-            ...mapState({
+            ...mapState('config', {
                 current: 'currentWifiNetwork',
                 current_connected: 'currentWifiConnected',
                 current_error: 'currentWifiError',
@@ -112,7 +112,7 @@
             }),
         },
         mounted() {
-            this.$store.dispatch('getWifiSettings', this.selectedMac);
+            this.$store.dispatch('config/getWifiSettings', this.selectedMac);
         },
         watch: {
             apName(value) {
@@ -124,13 +124,13 @@
         },
         methods: {
             scan() {
-                this.$store.dispatch('scanWifiNetworks');
+                this.$store.dispatch('config/scanWifiNetworks');
             },
             apSave() {
-                this.$store.dispatch('saveAP', this.apNameInput);
+                this.$store.dispatch('config/saveAP', this.apNameInput);
             },
             nowMacSave() {
-                this.$store.dispatch('saveNowMac', this.nowMacInput);
+                this.$store.dispatch('config/saveNowMac', this.nowMacInput);
             },
             connectModal(network) {
                 this.modalConnect = true;
@@ -142,14 +142,14 @@
                 this.connectingToWifi = ssid;
                 this.connectingToWifiError = '';
                 this.modalReconnecting = true;
-                const status = await this.$store.dispatch('connectWifi', {
+                const status = await this.$store.dispatch('config/connectWifi', {
                     ssid: ssid,
                     pass: pass,
                 });
 
                 if (status) {
                     this.modalReconnecting = false;
-                    this.$store.commit('setCurrentWifiNetwork', ssid);
+                    this.$store.commit('config/setCurrentWifiNetwork', ssid);
                 } else if (status === null) {
                     this.connectingToWifiError = 'Unable to connect to device or timeout';
                 } else if (status === false) {
