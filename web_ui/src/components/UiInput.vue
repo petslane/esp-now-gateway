@@ -26,7 +26,6 @@
         },
         watch: {
             value(value) {
-                console.log('watch.value', value)
                 this.input = value;
             },
             input(value) {

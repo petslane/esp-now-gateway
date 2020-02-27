@@ -55,7 +55,7 @@
             };
         },
         computed: {
-            ...mapState({
+            ...mapState('stats', {
                 stats: 'stats',
             }),
         },

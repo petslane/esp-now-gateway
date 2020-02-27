@@ -44,8 +44,8 @@
         },
         computed: {
             ...mapGetters({
-                webSocketMessages: 'getWebSocketMessages',
-                webSocketConnected: 'getWebSocketConnected',
+                webSocketMessages: 'logMessages/getMessages',
+                webSocketConnected: 'logMessages/getConnected',
             }),
         },
         methods: {
@@ -77,7 +77,7 @@
                 return `${time}.<span style="font-size: 70%">${millis}</span> ${date}`;
             },
             clearMessages() {
-                this.$store.dispatch('clearLogMessages');
+                this.$store.dispatch('logMessages/clear');
             },
         },
     };

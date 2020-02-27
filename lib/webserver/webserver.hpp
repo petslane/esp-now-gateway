@@ -172,7 +172,7 @@ class WebServer {
     }
 
     void apiDeleteDevice(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String id) {
-        String error = Config::saveDevice(id, "");
+        String error = Config::saveDevice(id, "", "");
 
         root["status"] = false;
         if (error.length()) {
@@ -186,7 +186,7 @@ class WebServer {
     void apiSaveDevice(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String id,
                        String name, String mac) {
 
-        String error = Config::saveDevice(mac, name);
+        String error = Config::saveDevice(mac, name, id);
 
         root["status"] = false;
         if (error.length()) {

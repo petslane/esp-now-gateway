@@ -26,14 +26,14 @@ new Vue({
             url = 'ws://' + location.host + '/ws';
         }
         const websocket = new WebSocket(url);
-        websocket.onopen = (event) => store.dispatch('webSocketStatus', true);
-        websocket.onclose = (event) => store.dispatch('webSocketStatus', false);
-        websocket.onmessage = (event) => store.dispatch('webSocketData', event);
-        websocket.onerror = (event) => store.dispatch('webSocketError', event);
+        websocket.onopen = (event) => store.dispatch('logMessages/webSocketStatus', true);
+        websocket.onclose = (event) => store.dispatch('logMessages/webSocketStatus', false);
+        websocket.onmessage = (event) => store.dispatch('logMessages/webSocketData', event);
+        websocket.onerror = (event) => store.dispatch('logMessages/webSocketError', event);
 
         Vue.prototype.$ws = websocket;
 
-        this.$store.dispatch('fetchNowDevices');
+        this.$store.dispatch('nowDevices/fetch');
     },
     render: h => h(App)
 }).$mount('#app');
