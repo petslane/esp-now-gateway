@@ -1,0 +1,36 @@
+name: PlatformIO build
+on: push
+
+jobs:
+  pio-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        opt:
+          - env: now
+          - env: web
+          - env: web
+            flags: -DENABLE_OLED_SHIELD
+          - env: web
+            flags: -DAUTH_USERNAME=admin -DAUTH_PASSWORD=pa55w0rd
+    name: Platform IO build "${{ matrix.opt.env }}" node with flags "${{ matrix.opt.flags }}"
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.x'
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U platformio
+      - name: Cache PlatformIO workspace
+        id: pio-workspace
+        uses: actions/cache@v1
+        with:
+          path: .pio
+          key: ${{ matrix.opt.env }}-pio
+      - name: Build
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ matrix.opt.flags }}
+        run: platformio run -e ${{ matrix.opt.env }}

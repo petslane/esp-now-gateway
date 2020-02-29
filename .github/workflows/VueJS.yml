@@ -1,0 +1,32 @@
+name: VueJS bundle
+on: push
+
+jobs:
+  verify-webui-bundle:
+    name: Verify WebUI JS bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v1
+      - name: Cache node dependencies
+        id: node-dependencies
+        uses: actions/cache@v1
+        with:
+          path: web_ui/node_modules
+          key: node_modules
+      - name: Install node dependencies
+        run: yarn --cwd web_ui install
+      - name: Extract current bundle
+        run: gunzip data/www/app.js.gz && mv data/www/app.js data/www/app.js-old
+      - name: Build new bundle
+        run: yarn --cwd web_ui build
+      - name: Extract new bundle
+        run: gunzip -k data/www/app.js.gz
+      - name: Compare WebUI JS bundles
+        run: diff data/www/app.js data/www/app.js-old
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: WebUI bundle
+          path: data/www/app.js.gz

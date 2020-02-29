@@ -1,5 +1,8 @@
 # ESP-NOW Gateway
 
+![PlatformIO build](https://github.com/petslane/esp-now-gateway/workflows/PlatformIO%20build/badge.svg)
+![VueJS bundle](https://github.com/petslane/esp-now-gateway/workflows/VueJS%20bundle/badge.svg)
+
 ![logo]
 
 ESP-NOW Gateway with MQTT using 2 WeMos D1 minis where one WeMos D1 mini acts
