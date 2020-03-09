@@ -113,9 +113,24 @@ class WebServer {
 
     void apiGetWifiNetworks(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
         JsonArray data = root.createNestedArray("data");
-        StaticJsonDocument<200> doc;
+        DynamicJsonDocument doc(300);
 
         int n = WiFi.scanComplete();
+        root["scanning"] = n < 0;
+        root["current"] = WiFi.SSID();
+        station_status_t status = wifi_station_get_connect_status();
+        root["current_connected"] = status == STATION_GOT_IP;
+        if (status == STATION_NO_AP_FOUND) {
+            root["current_error"] = "No AP";
+        } else if (status == STATION_CONNECT_FAIL) {
+            root["current_error"] = "Connect fail";
+        } else if (status == STATION_WRONG_PASSWORD) {
+            root["current_error"] = "Wrong password";
+        } else if (status == STATION_IDLE) {
+            root["current_error"] = "Connecting";
+        }
+
+        root["status"] = true;
         if (n >= 0) {
             for (int i = 0; i < n; i++) {
                 Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n",
@@ -134,21 +149,6 @@ class WebServer {
             }
             WiFi.scanDelete();
         }
-        root["scanning"] = n < 0;
-        root["current"] = WiFi.SSID();
-        station_status_t status = wifi_station_get_connect_status();
-        root["current_connected"] = status == STATION_GOT_IP;
-        if (status == STATION_NO_AP_FOUND) {
-            root["current_error"] = "No AP";
-        } else if (status == STATION_CONNECT_FAIL) {
-            root["current_error"] = "Connect fail";
-        } else if (status == STATION_WRONG_PASSWORD) {
-            root["current_error"] = "Wrong password";
-        } else if (status == STATION_IDLE) {
-            root["current_error"] = "Connecting";
-        }
-
-        root["status"] = true;
     }
 
     void apiGetDevices(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
