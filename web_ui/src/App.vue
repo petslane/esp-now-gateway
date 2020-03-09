@@ -21,16 +21,20 @@
     import LogMessages from './components/LogMessages';
     import SendNowMessage from './components/SendNowMessage';
     import NowDevices from "./components/NowDevices";
+    import NowGatewayMac from "./components/NowGatewayMac";
     import Stats from "./components/Stats";
     import WiFi from "./components/WiFi";
+    import WifiAccessPointName from "./components/WifiAccessPointName";
 
     export default {
         components: {
             NowDevices,
+            NowGatewayMac,
             SendNowMessage,
             LogMessages,
             Stats,
             WiFi,
+            WifiAccessPointName,
         },
         data() {
             return {
@@ -45,7 +49,7 @@
                 },
                 pages: {
                     [NowDevices.name]: [NowDevices.name],
-                    [WiFi.name]: [WiFi.name],
+                    [WiFi.name]: [NowGatewayMac.name, WifiAccessPointName.name, WiFi.name],
                     [SendNowMessage.name]: [SendNowMessage.name, LogMessages.name],
                     [Stats.name]: [Stats.name],
                 },
