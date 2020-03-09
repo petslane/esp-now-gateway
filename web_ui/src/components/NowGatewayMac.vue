@@ -2,7 +2,7 @@
     <div>
         <h4>NOW gateway</h4>
         <div class="content">
-            <mac-input placeholder="MAC address" class="content" v-model="nowMacInput" />
+            <mac-input placeholder="MAC address" v-model="nowMacInput" style="flex: 1 0 100px;" />
             <span class="spacer"></span>
             <ui-button @click="nowMacSave()">Save</ui-button>
         </div>

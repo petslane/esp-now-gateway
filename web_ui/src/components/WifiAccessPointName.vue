@@ -3,7 +3,7 @@
         <h4>Access Point</h4>
         <small><i>AP will be enabled only on missing WiFi connection</i></small>
         <div class="content">
-            <ui-input placeholder="AP name" class="content" v-model="apNameInput" />
+            <ui-input placeholder="AP name" v-model="apNameInput" style="flex: 1 0 100px;" />
             <span class="spacer"></span>
             <ui-button @click="apSave()">Save</ui-button>
         </div>

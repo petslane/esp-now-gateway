@@ -14,6 +14,7 @@
         </div>
 
         <div class="container">
+            <div v-if="!networks.length" class="no-networks">No networks. Press 'Scan networks'</div>
             <div v-for="(network, index) in networks" class="content" :class="{ odd: !index%2, even: index%2 }" :key="`${index}::${network[0]}`">
                 <span class="network">
                     &nbsp;
@@ -134,9 +135,14 @@
 
     .container {
         overflow-y: auto;
-        height: 300px;
         border: 1px solid lightgray;
+        margin-bottom: 5px;
 
+        .no-networks {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+        }
         .content {
             .network {
                 flex: 0 0 auto;
