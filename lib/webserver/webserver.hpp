@@ -132,21 +132,35 @@ class WebServer {
 
         root["status"] = true;
         if (n >= 0) {
+            int signalStrengths[n];
             for (int i = 0; i < n; i++) {
-                Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n",
-                              i + 1,
-                              WiFi.SSID(i).c_str(),
-                              WiFi.channel(i),
-                              WiFi.RSSI(i),
-                              WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
-
-                JsonArray network = doc.to<JsonArray>();
-                network.add(WiFi.SSID(i));
-                network.add(WiFi.channel(i));
-                network.add(WiFi.RSSI(i));
-                network.add(WiFi.encryptionType(i) != ENC_TYPE_NONE);
-                data.add(network);
+                signalStrengths[i] = WiFi.RSSI(i);
             }
+            qsort(signalStrengths, n, sizeof(signalStrengths[0]), utils::sort_desc);
+            for (int si = 0; si < n; si++) {
+                if (si > 0 && signalStrengths[si] == signalStrengths[si - 1]) {
+                    continue;
+                }
+                for (int i = 0; i < n; i++) {
+                    if (WiFi.RSSI(i) != signalStrengths[si]) {
+                        continue;
+                    }
+                    Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n",
+                                  i + 1,
+                                  WiFi.SSID(i).c_str(),
+                                  WiFi.channel(i),
+                                  WiFi.RSSI(i),
+                                  WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
+
+                    JsonArray network = doc.to<JsonArray>();
+                    network.add(WiFi.SSID(i));
+                    network.add(WiFi.channel(i));
+                    network.add(WiFi.RSSI(i));
+                    network.add(WiFi.encryptionType(i) != ENC_TYPE_NONE);
+                    data.add(network);
+                }
+            }
+
             WiFi.scanDelete();
         }
     }
