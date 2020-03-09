@@ -1,17 +1,19 @@
 <template>
     <div id="app">
-        <div class="tabs">
-            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_DEVICES }" @click="showPage(C.PAGE_DEVICES)">Now devices</a>
-            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_WIFI }" @click="showPage(C.PAGE_WIFI)">Wireless</a>
-            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_SEND_MSG }" @click="showPage(C.PAGE_SEND_MSG)">Send NOW messages</a>
-            <a href="javascript:void(0);" :class="{ active: showingPage === C.PAGE_STATS }" @click="showPage(C.PAGE_STATS)">Stats</a>
+        <div class="tabs" ref="tabs">
+            <a
+                v-for="(title, tab) in tabs"
+                href="javascript:void(0);"
+                :class="{ active: showingPage === tab }"
+                :key="tab"
+                @click="showPage(tab)">{{ title }}</a>
         </div>
 
-        <now-devices v-show="showingPage === C.PAGE_DEVICES"></now-devices>
-        <send-now-message v-show="showingPage === C.PAGE_SEND_MSG"></send-now-message>
-        <log-messages v-show="showingPage === C.PAGE_SEND_MSG"></log-messages>
-        <stats v-show="showingPage === C.PAGE_STATS"></stats>
-        <wifi v-show="showingPage === C.PAGE_WIFI"></wifi>
+        <transition-group name="pagechanger" tag="div" style="position: relative" :class="pagechanger_direction" :duration="200">
+            <div class="pagechanger-item" v-for="(components, index) in pages" :key="index" v-show="showingPageDelay === index">
+                <component v-for="component in components" :is="component" :key="component"></component>
+            </div>
+        </transition-group>
     </div>
 </template>
 
@@ -19,36 +21,53 @@
     import LogMessages from './components/LogMessages';
     import SendNowMessage from './components/SendNowMessage';
     import NowDevices from "./components/NowDevices";
+    import NowGatewayMac from "./components/NowGatewayMac";
     import Stats from "./components/Stats";
     import WiFi from "./components/WiFi";
-
-    const PAGE_DEVICES = 'devices';
-    const PAGE_SEND_MSG = 'send_now_messages';
-    const PAGE_STATS = 'stats';
-    const PAGE_WIFI = 'wifi';
+    import WifiAccessPointName from "./components/WifiAccessPointName";
 
     export default {
         components: {
             NowDevices,
+            NowGatewayMac,
             SendNowMessage,
             LogMessages,
             Stats,
-            'wifi': WiFi,
+            WiFi,
+            WifiAccessPointName,
         },
         data() {
             return {
-                showingPage: PAGE_DEVICES,
-                C: {
-                    PAGE_DEVICES,
-                    PAGE_SEND_MSG,
-                    PAGE_STATS,
-                    PAGE_WIFI,
+                showingPage: NowDevices.name,
+                showingPageDelay: NowDevices.name,
+                pagechanger_direction: '',
+                tabs: {
+                    [NowDevices.name]: 'Now devices',
+                    [WiFi.name]: 'Wireless',
+                    [SendNowMessage.name]: 'Send NOW messages',
+                    [Stats.name]: 'Stats',
+                },
+                pages: {
+                    [NowDevices.name]: [NowDevices.name],
+                    [WiFi.name]: [NowGatewayMac.name, WifiAccessPointName.name, WiFi.name],
+                    [SendNowMessage.name]: [SendNowMessage.name, LogMessages.name],
+                    [Stats.name]: [Stats.name],
                 },
             };
         },
         methods: {
             showPage(pageName) {
+                const tabs = Object.keys(this.tabs);
+                const oldTabIndex = tabs.indexOf(this.showingPage);
+                const newTabIndex = tabs.indexOf(pageName);
+
+                this.pagechanger_direction = `pagechanger-direction-${oldTabIndex < newTabIndex ? 'left' : 'right'}`;
+                
                 this.showingPage = pageName;
+                this.$nextTick(() => {
+                    this.$refs.tabs.getElementsByClassName('active')[0].scrollIntoView({ inline: 'center', behavior: 'smooth' });
+                    this.showingPageDelay = this.showingPage;
+                });
             },
         }
     };
@@ -59,6 +78,15 @@
     body {
         font-family: 'Roboto';
         background-color: #f9f9f9;
+        padding: 0;
+        margin: 0;
+    }
+
+    #app {
+        width: 100%;
+        height: 100%;
+        padding: 5px;
+        box-sizing: border-box;
     }
 
     h4 {
@@ -66,6 +94,35 @@
         font-size: 18px;
     }
 
+    .pagechanger-item {
+        position: absolute;
+        top: 0;
+        display: inline-block;
+        width: 100%;
+    }
+    .pagechanger-enter-active, .pagechanger-leave-active {
+        transition: all 200ms ease-out;
+    }
+    .pagechanger-enter, .pagechanger-leave-to {
+        opacity: 0;
+    }
+    .pagechanger-direction-left {
+        .pagechanger-enter {
+            transform: translateX(50vw);
+        }
+        .pagechanger-leave-to {
+            transform: translateX(-50vw);
+        }
+    }
+    .pagechanger-direction-right {
+        .pagechanger-enter {
+            transform: translateX(-50vw);
+        }
+        .pagechanger-leave-to {
+            transform: translateX(50vw);
+        }
+    }
+    
     .tabs {
         position: relative;
         display: block;
@@ -76,7 +133,7 @@
         margin-bottom: 10px;
         & > * {
             position: relative;
-            display:inline-block;
+            display: inline-block;
             text-decoration: none;
             padding: 22px;
             text-transform: uppercase;

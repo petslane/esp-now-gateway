@@ -1,20 +1,5 @@
 <template>
     <div>
-        <h4>NOW gateway</h4>
-        <div class="content">
-            <mac-input placeholder="MAC address" class="content" v-model="nowMacInput" />
-            <span class="spacer"></span>
-            <ui-button @click="nowMacSave()">Save</ui-button>
-        </div>
-
-        <h4>Access Point</h4>
-        <small><i>AP will be enabled only on missing WiFi connection</i></small>
-        <div class="content">
-            <ui-input placeholder="AP name" class="content" v-model="apNameInput" />
-            <span class="spacer"></span>
-            <ui-button @click="apSave()">Save</ui-button>
-        </div>
-        
         <h4>WiFi connection</h4>
         <div class="content">
             <span>
@@ -29,6 +14,7 @@
         </div>
 
         <div class="container">
+            <div v-if="!networks.length" class="no-networks">No networks. Press 'Scan networks'</div>
             <div v-for="(network, index) in networks" class="content" :class="{ odd: !index%2, even: index%2 }" :key="`${index}::${network[0]}`">
                 <span class="network">
                     &nbsp;
@@ -84,7 +70,7 @@
 </template>
 
 <script>
-    import {mapGetters, mapState} from "vuex";
+    import {mapState} from "vuex";
 
     export default {
         name: 'WiFi',
@@ -96,8 +82,6 @@
                 modalConnect: false,
                 connectToWifi: undefined,
                 connectPassword: undefined,
-                apNameInput: '',
-                nowMacInput: '',
             };
         },
         computed: {
@@ -107,30 +91,14 @@
                 current_error: 'currentWifiError',
                 scanning: 'scanningWifiNetworks',
                 networks: 'wifiNetworks',
-                apName: 'apName',
-                nowMac: 'nowMac',
             }),
         },
         mounted() {
             this.$store.dispatch('config/getWifiSettings', this.selectedMac);
         },
-        watch: {
-            apName(value) {
-                this.apNameInput = value;
-            },
-            nowMac(value) {
-                this.nowMacInput = value;
-            },
-        },
         methods: {
             scan() {
                 this.$store.dispatch('config/scanWifiNetworks');
-            },
-            apSave() {
-                this.$store.dispatch('config/saveAP', this.apNameInput);
-            },
-            nowMacSave() {
-                this.$store.dispatch('config/saveNowMac', this.nowMacInput);
             },
             connectModal(network) {
                 this.modalConnect = true;
@@ -167,9 +135,14 @@
 
     .container {
         overflow-y: auto;
-        height: 300px;
         border: 1px solid lightgray;
+        margin-bottom: 5px;
 
+        .no-networks {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+        }
         .content {
             .network {
                 flex: 0 0 auto;
