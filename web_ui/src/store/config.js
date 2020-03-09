@@ -16,10 +16,7 @@ export default {
     getters: {},
     mutations: {
         setWifiNetworks(state, payload) {
-            payload.sort((a, b) => {
-                return a[2] < b[2];
-            });
-            Vue.set(state, 'wifiNetworks', payload);
+            Vue.set(state, 'wifiNetworks', payload.filter(n => n && n.length));
         },
         setCurrentWifiNetwork(state, payload) {
             Vue.set(state, 'currentWifiNetwork', payload.current);

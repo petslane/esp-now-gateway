@@ -41,4 +41,11 @@ namespace utils {
             dest[kvp.key()].set(kvp.value());
         }
     }
+
+    int sort_desc(const void *cmp1, const void *cmp2) {
+        int a = *((int *)cmp1);
+        int b = *((int *)cmp2);
+
+        return a > b ? -1 : (a < b ? 1 : 0);
+    }
 } // namespace utils
