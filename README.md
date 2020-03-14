@@ -39,8 +39,9 @@ incoming messages, configure WiFi connection and define all known ESP-NOW device
 
 All configurations (WiFi, MQTT, NOW devices) are stored in `data/config.json` file.
 
-Web UI is implemented with [me-no-dev/ESPAsyncWebServer][ESPAsyncWebServer]. WebUI is protected with hardcoded
-username/password that can be changed with variables `AUTH_USERNAME` and `AUTH_PASSWORD` in `platformio.ini` file.
+Web UI is implemented with [me-no-dev/ESPAsyncWebServer][ESPAsyncWebServer].
+WebUI can be protected with username/password that can be set from WebUI.
+By default username/password is admin/pa55w0rd defined in [config](data/config.json).
 WebUI itself is built, compressed and stored in `data/www` folder. Source code for WebUI is in `web_ui` folder.
 
 If OLED shield is used, then uncomment `ENABLE_OLED_SHIELD` variable in `platformio.ini` file.

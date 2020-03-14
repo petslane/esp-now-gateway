@@ -3,6 +3,7 @@
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
+#include <./authorize.hpp>
 #include <./captive.hpp>
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -21,19 +22,6 @@ class WebServer {
         request->send(404, "text/plain", "Not found");
     }
 
-    bool authenticateRequest(AsyncWebServerRequest *request) {
-#ifndef AUTH_USERNAME
-        return true;
-#endif
-        if (!request->authenticate((const char *)XSTR(AUTH_USERNAME), (const char *)XSTR(AUTH_PASSWORD))) {
-            Serial.println("[web] Invalid username/password");
-            request->requestAuthentication();
-            return false;
-        }
-
-        return true;
-    }
-
     bool readDevicesJson(String *out) {
         SPIFFS.begin();
 
@@ -50,7 +38,7 @@ class WebServer {
             return false;
         }
 
-        StaticJsonDocument<500> doc;
+        DynamicJsonDocument doc(1000);
         DeserializationError err = deserializeJson(doc, f);
         f.close();
         SPIFFS.end();
@@ -256,12 +244,9 @@ class WebServer {
 
     void setup() {
         server->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
+        server->addHandler(new AuthorizeRequestHandler());
 
         server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
-            if (!authenticateRequest(request)) {
-                return;
-            }
-
             SPIFFS.begin();
             AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/index.html.gz", "text/html");
             response->addHeader("Content-Encoding", "gzip");
@@ -269,10 +254,6 @@ class WebServer {
             // SPIFFS.end();
         });
         server->on("/app.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
-            if (!authenticateRequest(request)) {
-                return;
-            }
-
             SPIFFS.begin();
             AsyncWebServerResponse *response =
                 request->beginResponse(SPIFFS, "/www/app.js.gz", "application/javascript");
@@ -295,10 +276,6 @@ class WebServer {
 
         AsyncCallbackJsonWebHandler *handler =
             new AsyncCallbackJsonWebHandler("/api", [this](AsyncWebServerRequest *request, JsonVariant &json) {
-                if (!authenticateRequest(request)) {
-                    return;
-                }
-
                 JsonObject jsonObj = json.as<JsonObject>();
 
                 if (!apiRequireParam(jsonObj, "type", request)) {

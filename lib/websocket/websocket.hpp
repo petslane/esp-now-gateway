@@ -122,9 +122,6 @@ class WebSocket {
                               std::placeholders::_4,
                               std::placeholders::_5,
                               std::placeholders::_6));
-#ifdef AUTH_USERNAME
-        ws->setAuthentication((const char *)XSTR(AUTH_USERNAME), (const char *)XSTR(AUTH_PASSWORD));
-#endif
 
         webserver->addHandler(ws);
     }

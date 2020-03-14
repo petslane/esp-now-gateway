@@ -11,8 +11,6 @@ jobs:
           - env: web
           - env: web
             flags: -DENABLE_OLED_SHIELD
-          - env: web
-            flags: -DAUTH_USERNAME=admin -DAUTH_PASSWORD=pa55w0rd
     name: Platform IO build "${{ matrix.opt.env }}" node with flags "${{ matrix.opt.flags }}"
     steps:
       - uses: actions/checkout@master
