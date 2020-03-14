@@ -225,6 +225,22 @@ class WebServer {
         return true;
     }
 
+    void apiSetAuth(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root, String username,
+                    String password) {
+        *config.web.auth.username = username;
+        *config.web.auth.password = username.length() > 0 ? password : "";
+
+        Config::saveConfig();
+
+        root["username"] = config.web.auth.username->c_str();
+        root["status"] = true;
+    }
+
+    void apiGetAuth(AsyncWebServerRequest *request, AsyncJsonResponse *response, JsonObject root) {
+        root["status"] = true;
+        root["username"] = config.web.auth.username->c_str();
+    }
+
   public:
     WebServer(WIFI *wifi) {
         this->server = new AsyncWebServer(80);
@@ -299,6 +315,8 @@ class WebServer {
                     requiredKeys.emplace_back("name");
                 } else if (type.equals("save_now_mac")) {
                     requiredKeys.emplace_back("mac");
+                } else if (type.equals("set_auth_username")) {
+                    requiredKeys.emplace_back("username");
                 }
                 for (std::vector<String>::iterator it = requiredKeys.begin(); it != requiredKeys.end(); ++it) {
                     if (!apiRequireParam(jsonObj, *it, request)) {
@@ -337,6 +355,14 @@ class WebServer {
                 } else if (type.equals("save_now_mac")) {
                     String mac = jsonObj["mac"].as<String>();
                     apiSaveNowMac(request, response, root, mac);
+                } else if (type.equals("get_auth_username")) {
+                    apiGetAuth(request, response, root);
+                } else if (type.equals("set_auth_username")) {
+                    String username = jsonObj["username"].as<String>();
+                    String password = jsonObj["password"].as<String>();
+                    apiSetAuth(request, response, root, username, password);
+                } else if (type.equals("save_device")) {
+                    apiGetAuth(request, response, root);
                 } else {
                     return request->send(400, "text/plain", "Unknown type");
                 }

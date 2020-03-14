@@ -1,6 +1,6 @@
 <template>
     <label class="inp" :class="{ active: isActive, filled: hasValue }">
-        <input type="text" placeholder="" v-model="input" @focus="focus(true)" @blur="focus(false)">
+        <input :type="type" placeholder="" v-model="input" @focus="focus(true)" @blur="focus(false)">
         <span class="label">{{placeholder}}</span>
         <span class="border"></span>
     </label>
@@ -22,6 +22,10 @@
             },
             placeholder: {
                 type: String,
+            },
+            type: {
+                type: String,
+                default: "text",
             },
         },
         watch: {

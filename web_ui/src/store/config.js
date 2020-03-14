@@ -12,6 +12,7 @@ export default {
         wifiNetworks: [],
         scanningWifiNetworks: false,
         nowMac: '',
+        authUsername: '',
     },
     getters: {},
     mutations: {
@@ -35,6 +36,9 @@ export default {
         },
         setNowMac(state, payload) {
             Vue.set(state, 'nowMac', payload.now_mac);
+        },
+        setAuthUsername(state, payload) {
+            Vue.set(state, 'authUsername', payload);
         },
     },
     actions: {
@@ -96,6 +100,16 @@ export default {
             const result = await api('save_now_mac', { mac });
 
             commit('setNowMac', result);
+        },
+        async setAuthUsername({ commit, dispatch }, { username, password }) {
+            const result = await api('set_auth_username', { username, password });
+
+            commit('setAuthUsername', result.username);
+        },
+        async getAuthUsername({ commit, dispatch }, mac) {
+            const result = await api('get_auth_username', {});
+
+            commit('setAuthUsername', result.username);
         },
     },
 };

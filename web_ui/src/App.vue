@@ -25,6 +25,7 @@
     import Stats from "./components/Stats";
     import WiFi from "./components/WiFi";
     import WifiAccessPointName from "./components/WifiAccessPointName";
+    import Authentication from "./components/Authentication";
 
     export default {
         components: {
@@ -35,6 +36,7 @@
             Stats,
             WiFi,
             WifiAccessPointName,
+            Authentication,
         },
         data() {
             return {
@@ -49,7 +51,7 @@
                 },
                 pages: {
                     [NowDevices.name]: [NowDevices.name],
-                    [WiFi.name]: [NowGatewayMac.name, WifiAccessPointName.name, WiFi.name],
+                    [WiFi.name]: [NowGatewayMac.name, WifiAccessPointName.name, Authentication.name, WiFi.name],
                     [SendNowMessage.name]: [SendNowMessage.name, LogMessages.name],
                     [Stats.name]: [Stats.name],
                 },
